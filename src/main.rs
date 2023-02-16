@@ -7,7 +7,8 @@ fn main() -> Result<(), Box<dyn Error>> {
     let xs = Xs::new(XsOpenFlags::ReadOnly)?;
 
     let os_info = collect_os()?;
-    publish_static(&xs, &os_info)?;
+    let kernel_info = collect_kernel()?;
+    publish_static(&xs, &os_info, &kernel_info)?;
 
     Ok(())
 }
@@ -16,6 +17,10 @@ struct OsInfo {
     pretty_name: String,
     nickname: String,
     version: String,
+}
+
+struct KernelInfo {
+    release: String,
 }
 
 // /etc/os-release implementation
@@ -52,10 +57,24 @@ fn collect_os() -> Result<OsInfo, io::Error> {
     Ok(info)
 }
 
+// UNIX uname() implementation
+fn collect_kernel() -> Result<KernelInfo, io::Error> {
+    let uname_info = uname::uname()?;
+    let info = KernelInfo {
+        release: uname_info.release,
+    };
+
+    Ok(info)
+}
+
 // (partial) xenstore implementation with XenServer layout
-fn publish_static(xs: &Xs, os_info: &OsInfo) -> Result<(), io::Error> {
+fn publish_static(xs: &Xs, os_info: &OsInfo,
+                  kernel_info: &KernelInfo,
+) -> Result<(), io::Error> {
     xs.write(XBTransaction::Null, "data/os_name", &os_info.pretty_name)?;
     xs.write(XBTransaction::Null, "data/os_distro", &os_info.nickname)?;
+
+    xs.write(XBTransaction::Null, "data/os_uname", &kernel_info.release)?;
 
     Ok(())
 }

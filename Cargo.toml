@@ -6,6 +6,7 @@ edition = "2018"
 #rust-version = "1.67"
 
 [dependencies]
+uname = "0.1.1"
 xenstore-rs = "0.3.2"
 
 [patch.crates-io]
