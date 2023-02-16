@@ -1,0 +1,12 @@
+[package]
+name = "xen-guest-agent"
+version = "0.1.0"
+authors = ["Yann Dirson <yann.dirson@vates.fr>"]
+edition = "2018"
+#rust-version = "1.67"
+
+[dependencies]
+xenstore-rs = "0.3.2"
+
+[patch.crates-io]
+xenstore-rs = { git = "https://github.com/xcp-ng/xenstore-rs.git", branch = "xs_write" }
