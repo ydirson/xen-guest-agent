@@ -3,6 +3,8 @@ use std::fs::File;
 use std::io::{self, BufRead};
 use xenstore_rs::{Xs, XsOpenFlags, XBTransaction};
 
+const PROTOCOL_VERSION: &str = "0.1.0";
+
 fn main() -> Result<(), Box<dyn Error>> {
     let xs = Xs::new(XsOpenFlags::ReadOnly)?;
 
@@ -14,8 +16,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 }
 
 struct OsInfo {
-    pretty_name: String,
-    nickname: String,
+    name: String,
     version: String,
 }
 
@@ -25,9 +26,8 @@ struct KernelInfo {
 
 // /etc/os-release implementation
 fn collect_os() -> Result<OsInfo, io::Error> {
-    // arbitrary default values, should not happen
-    let mut nickname = "undefined-os".to_string();
-    let mut pretty_name = "Undefined Operating System".to_string();
+    // empty default values, should not happen
+    let mut name = "".to_string();
     let mut version = "".to_string();
 
     let file = File::open("/etc/os-release")?;
@@ -38,9 +38,8 @@ fn collect_os() -> Result<OsInfo, io::Error> {
                 let (key, value) = (v[0], v[1]);
                 let value = value.trim_matches('"').to_string();
                 match key {
-                    "NAME" => nickname = value,
-                    "PRETTY_NAME" => pretty_name = value,
-                    "VERSION" => version = value,
+                    "NAME" => name = value,
+                    "VERSION_ID" => version = value,
                     _ => (),
                 };
             },
@@ -49,8 +48,7 @@ fn collect_os() -> Result<OsInfo, io::Error> {
     }
 
     let info = OsInfo {
-        pretty_name,
-        nickname,
+        name,
         version,
     };
 
@@ -71,10 +69,11 @@ fn collect_kernel() -> Result<KernelInfo, io::Error> {
 fn publish_static(xs: &Xs, os_info: &OsInfo,
                   kernel_info: &KernelInfo,
 ) -> Result<(), io::Error> {
-    xs.write(XBTransaction::Null, "data/os_name", &os_info.pretty_name)?;
-    xs.write(XBTransaction::Null, "data/os_distro", &os_info.nickname)?;
-
-    xs.write(XBTransaction::Null, "data/os_uname", &kernel_info.release)?;
+    xs.write(XBTransaction::Null, "data/xen-guest-agent", PROTOCOL_VERSION)?;
+    xs.write(XBTransaction::Null, "data/os/name", &os_info.name)?;
+    xs.write(XBTransaction::Null, "data/os/version", &os_info.version)?;
+    xs.write(XBTransaction::Null, "data/os/class", "unix")?;
+    xs.write(XBTransaction::Null, "data/os/unix/kernel-version", &kernel_info.release)?;
 
     Ok(())
 }
