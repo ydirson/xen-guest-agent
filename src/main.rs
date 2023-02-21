@@ -69,11 +69,16 @@ fn collect_kernel() -> Result<KernelInfo, io::Error> {
 fn publish_static(xs: &Xs, os_info: &OsInfo,
                   kernel_info: &KernelInfo,
 ) -> Result<(), io::Error> {
-    xs.write(XBTransaction::Null, "data/xen-guest-agent", PROTOCOL_VERSION)?;
-    xs.write(XBTransaction::Null, "data/os/name", &os_info.name)?;
-    xs.write(XBTransaction::Null, "data/os/version", &os_info.version)?;
-    xs.write(XBTransaction::Null, "data/os/class", "unix")?;
-    xs.write(XBTransaction::Null, "data/os/unix/kernel-version", &kernel_info.release)?;
+    xs_publish(xs, "data/xen-guest-agent", PROTOCOL_VERSION)?;
+    xs_publish(xs, "data/os/name", &os_info.name)?;
+    xs_publish(xs, "data/os/version", &os_info.version)?;
+    xs_publish(xs, "data/os/class", "unix")?;
+    xs_publish(xs, "data/os/unix/kernel-version", &kernel_info.release)?;
 
     Ok(())
+}
+
+fn xs_publish(xs: &Xs, key: &str, value: &str) -> Result<(), io::Error> {
+    println!("W: {}={:?}", key, value);
+    xs.write(XBTransaction::Null, key, value)
 }
