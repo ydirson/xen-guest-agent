@@ -24,6 +24,9 @@ impl Publisher for ConcretePublisher {
                                  _address: &IpAddr) -> Result<(), io::Error> {
         Ok(())
     }
+    fn unpublish_net_iface_address(&self, _ifname: &str, _address: &IpAddr) -> Result<(), io::Error> {
+        Ok(())
+    }
     fn publish_net_iface_mac(&self, _ifname: &str, _mac_address: &str) -> Result<(), io::Error> {
         Ok(())
     }

@@ -135,6 +135,10 @@ fn publish_rtnetlink(publisher: &ConcretePublisher, nl_msg: &RtnlMessage) -> Res
             let (ifname, address) = nl_addressmessage_decode(address_msg)?;
             publisher.publish_net_iface_address(&ifname, &address)?;
         },
+        RtnlMessage::DelAddress(address_msg) => {
+            let (ifname, address) = nl_addressmessage_decode(address_msg)?;
+            publisher.unpublish_net_iface_address(&ifname, &address)?;
+        },
         _ => {
             println!("unhandled RtnlMessage: {:?}", nl_msg);
         },

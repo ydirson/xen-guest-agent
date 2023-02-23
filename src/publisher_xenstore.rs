@@ -37,6 +37,13 @@ impl Publisher for ConcretePublisher {
         Ok(())
     }
 
+    fn unpublish_net_iface_address(&self, ifname: &str, address: &IpAddr) -> Result<(), io::Error> {
+        let key_suffix = munged_address(address);
+        xs_unpublish(&self.xs, &format!("data/net/{ifname}/{key_suffix}"))?;
+
+        Ok(())
+    }
+
     fn publish_net_iface_mac(&self, ifname: &str, mac_address: &str) -> Result<(), io::Error> {
         xs_publish(&self.xs, &format!("data/net/{ifname}"), &mac_address)?;
 
@@ -47,6 +54,11 @@ impl Publisher for ConcretePublisher {
 fn xs_publish(xs: &Xs, key: &str, value: &str) -> Result<(), io::Error> {
     println!("W: {}={:?}", key, value);
     xs.write(XBTransaction::Null, key, value)
+}
+
+fn xs_unpublish(xs: &Xs, key: &str) -> Result<(), io::Error> {
+    println!("D: {}", key);
+    xs.rm(XBTransaction::Null, key)
 }
 
 fn munged_address(addr: &IpAddr) -> String {
