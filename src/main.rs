@@ -17,6 +17,7 @@ use netlink_packet_core::{
 };
 use netlink_packet_route::{
     AddressMessage, address,
+    LinkMessage, link,
     RtnlMessage,
 };
 use netlink_proto::{
@@ -48,6 +49,27 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let os_info = collect_os()?;
     let kernel_info = collect_kernel()?;
     publisher.publish_static(&os_info, &kernel_info)?;
+
+    // Create the netlink message that requests the links to be dumped
+    let mut nl_hdr = NetlinkHeader::default();
+    nl_hdr.flags = NLM_F_DUMP | NLM_F_REQUEST;
+    let nl_msg = NetlinkMessage::new(
+        nl_hdr,
+        RtnlMessage::GetLink(LinkMessage::default()).into(),
+    );
+    // Send the request
+    let mut nl_response = nl_handle.request(nl_msg, SocketAddr::new(0, 0))?;
+    // Handle response
+    loop {
+        if let Some(packet) = nl_response.next().await {
+            if let NetlinkMessage{payload: NetlinkPayload::InnerMessage(msg), ..} = packet {
+                publish_rtnetlink(&publisher, &msg)?;
+            }
+            //println!("<<< {:?}", packet);
+        } else {
+            break;
+        }
+    }
 
     // Create the netlink message that requests the addresses to be dumped
     let mut nl_hdr = NetlinkHeader::default();
@@ -116,6 +138,26 @@ fn collect_kernel() -> Result<KernelInfo, io::Error> {
 
 fn publish_rtnetlink(publisher: &ConcretePublisher, nl_msg: &RtnlMessage) -> Result<(), io::Error> {
     match nl_msg {
+        RtnlMessage::NewLink(LinkMessage{header, nlas, ..}) => {
+            //println!("{:?}", nlas);
+            let mut address_bytes: Option<&Vec<u8>> = None;
+            for nla in nlas {
+                match nla {
+                    link::nlas::Nla::Address(addr) => address_bytes = Some(addr),
+                    _ => (),
+                }
+            }
+            let mac_address = match address_bytes {
+                Some(address_bytes) => address_bytes.iter()
+                    .map(|b| format!("{b:02x}"))
+                    .collect::<Vec<String>>().join(":"),
+                None => "".to_string(),
+            };
+
+            // FIXME lookup the iface name from index
+            let ifname = header.index.to_string();
+            publisher.publish_net_iface_mac(&ifname, &mac_address)?;
+        },
         RtnlMessage::NewAddress(address_msg) => {
             let (ifname, address) = nl_addressmessage_decode(address_msg)?;
             publisher.publish_net_iface_address(&ifname, &address)?;
