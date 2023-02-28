@@ -1,19 +1,20 @@
 mod datastructs;
+mod publisher_xenstore;
 
-use crate::datastructs::{OsInfo, KernelInfo};
+use crate::datastructs::{OsInfo, KernelInfo,
+                         Publisher};
+use crate::publisher_xenstore::ConcretePublisher;
+
 use std::error::Error;
 use std::fs::File;
 use std::io::{self, BufRead};
-use xenstore_rs::{Xs, XsOpenFlags, XBTransaction};
-
-const PROTOCOL_VERSION: &str = "0.1.0";
 
 fn main() -> Result<(), Box<dyn Error>> {
-    let xs = Xs::new(XsOpenFlags::ReadOnly)?;
+    let publisher = ConcretePublisher::new()?;
 
     let os_info = collect_os()?;
     let kernel_info = collect_kernel()?;
-    publish_static(&xs, &os_info, &kernel_info)?;
+    publisher.publish_static(&os_info, &kernel_info)?;
 
     Ok(())
 }
@@ -57,22 +58,4 @@ fn collect_kernel() -> Result<KernelInfo, io::Error> {
     };
 
     Ok(info)
-}
-
-// (partial) xenstore implementation with XenServer layout
-fn publish_static(xs: &Xs, os_info: &OsInfo,
-                  kernel_info: &KernelInfo,
-) -> Result<(), io::Error> {
-    xs_publish(xs, "data/xen-guest-agent", PROTOCOL_VERSION)?;
-    xs_publish(xs, "data/os/name", &os_info.name)?;
-    xs_publish(xs, "data/os/version", &os_info.version)?;
-    xs_publish(xs, "data/os/class", "unix")?;
-    xs_publish(xs, "data/os/unix/kernel-version", &kernel_info.release)?;
-
-    Ok(())
-}
-
-fn xs_publish(xs: &Xs, key: &str, value: &str) -> Result<(), io::Error> {
-    println!("W: {}={:?}", key, value);
-    xs.write(XBTransaction::Null, key, value)
 }
