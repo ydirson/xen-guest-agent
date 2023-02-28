@@ -1,3 +1,6 @@
+mod datastructs;
+
+use crate::datastructs::{OsInfo, KernelInfo};
 use std::error::Error;
 use std::fs::File;
 use std::io::{self, BufRead};
@@ -13,15 +16,6 @@ fn main() -> Result<(), Box<dyn Error>> {
     publish_static(&xs, &os_info, &kernel_info)?;
 
     Ok(())
-}
-
-struct OsInfo {
-    name: String,
-    version: String,
-}
-
-struct KernelInfo {
-    release: String,
 }
 
 // /etc/os-release implementation
