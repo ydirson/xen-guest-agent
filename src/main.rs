@@ -1,4 +1,5 @@
 mod datastructs;
+mod helpers;
 
 #[cfg_attr(feature = "xenstore", path = "publisher_xenstore.rs")]
 mod publisher;

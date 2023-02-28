@@ -1,4 +1,5 @@
 use crate::datastructs::Publisher;
+use crate::helpers::interface_name;
 use crate::publisher::ConcretePublisher;
 use futures::channel::mpsc::UnboundedReceiver;
 use futures::stream::StreamExt;
@@ -126,8 +127,7 @@ fn publish_rtnetlink(publisher: &ConcretePublisher, nl_msg: &RtnlMessage) -> Res
                 None => "".to_string(),
             };
 
-            // FIXME lookup the iface name from index
-            let ifname = header.index.to_string();
+            let ifname = interface_name(header.index);
             publisher.publish_net_iface_mac(&ifname, &mac_address)?;
         },
         RtnlMessage::NewAddress(address_msg) => {
@@ -181,8 +181,7 @@ fn nl_addressmessage_decode(msg: &AddressMessage) -> Result<(String, IpAddr), io
         _ => None,
     };
 
-    // FIXME lookup the iface name from index
-    let ifname = header.index.to_string();
+    let ifname = interface_name(header.index);
 
     match address {
         Some(address) => Ok((ifname, address)),
