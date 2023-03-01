@@ -7,7 +7,11 @@ edition = "2018"
 
 [dependencies]
 uname = "0.1.1"
-xenstore-rs = "0.3.2"
+xenstore-rs = { version = "0.3.2", optional = true }
+
+[features]
+default = ["xenstore"]
+xenstore = ["dep:xenstore-rs"]
 
 [patch.crates-io]
 xenstore-rs = { git = "https://github.com/xcp-ng/xenstore-rs.git", branch = "xs_write" }

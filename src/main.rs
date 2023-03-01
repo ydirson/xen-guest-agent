@@ -1,9 +1,11 @@
 mod datastructs;
-mod publisher_xenstore;
+
+#[cfg_attr(feature = "xenstore", path = "publisher_xenstore.rs")]
+mod publisher;
 
 use crate::datastructs::{OsInfo, KernelInfo,
                          Publisher};
-use crate::publisher_xenstore::ConcretePublisher;
+use crate::publisher::ConcretePublisher;
 
 use std::error::Error;
 use std::fs::File;
