@@ -14,4 +14,9 @@ impl NetworkSource {
     ) -> Result<(), Box<dyn Error>> {
         Ok(())
     }
+
+    pub async fn collect_publish_loop(&mut self, publisher: &ConcretePublisher
+    ) -> Result<(), io::Error> {
+        Ok(())
+    }
 }

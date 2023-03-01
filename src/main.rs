@@ -18,13 +18,18 @@ use std::io::{self, BufRead};
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     let publisher = ConcretePublisher::new()?;
-    let mut nl = NetworkSource::new()?;
 
     let os_info = collect_os()?;
     let kernel_info = collect_kernel()?;
     publisher.publish_static(&os_info, &kernel_info)?;
 
-    nl.collect_publish_current(&publisher).await?;
+    // network events
+    let mut collector_net = NetworkSource::new()?;
+    collector_net.collect_publish_current(&publisher).await?;
+
+    // main loop
+    // FIXME this is a bad non-extensible API
+    collector_net.collect_publish_loop(&publisher).await?;
 
     Ok(())
 }

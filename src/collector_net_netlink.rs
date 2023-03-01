@@ -1,5 +1,6 @@
 use crate::datastructs::Publisher;
 use crate::publisher::ConcretePublisher;
+use futures::channel::mpsc::UnboundedReceiver;
 use futures::stream::StreamExt;
 use netlink_packet_core::{
     NetlinkHeader,
@@ -17,6 +18,11 @@ use netlink_proto::{
     self, new_connection,
     sys::{protocols::NETLINK_ROUTE, AsyncSocket, SocketAddr},
 };
+use rtnetlink::constants::{
+    RTMGRP_IPV4_IFADDR,
+    RTMGRP_IPV6_IFADDR,
+    RTMGRP_LINK,
+    };
 use std::convert::TryInto;
 use std::error::Error;
 use std::io;
@@ -24,13 +30,14 @@ use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 
 pub struct NetworkSource {
     handle: netlink_proto::ConnectionHandle<RtnlMessage>,
+    messages: UnboundedReceiver<(NetlinkMessage<RtnlMessage>, SocketAddr)>,
 }
 
 impl NetworkSource {
     pub fn new() -> Result<NetworkSource, io::Error> {
-        let (mut connection, handle, _) = new_connection(NETLINK_ROUTE)?;
+        let (mut connection, handle, messages) = new_connection(NETLINK_ROUTE)?;
         // What kinds of broadcast messages we want to listen for.
-        let nl_mgroup_flags = 0;
+        let nl_mgroup_flags = RTMGRP_LINK | RTMGRP_IPV4_IFADDR | RTMGRP_IPV6_IFADDR;
         let nl_addr = SocketAddr::new(0, nl_mgroup_flags);
         connection
             .socket_mut()
@@ -38,7 +45,7 @@ impl NetworkSource {
             .bind(&nl_addr)
             .expect("failed to bind");
         tokio::spawn(connection);
-        Ok(NetworkSource { handle })
+        Ok(NetworkSource { handle, messages })
     }
 
     pub async fn collect_publish_current(&mut self, publisher: &ConcretePublisher
@@ -82,6 +89,18 @@ impl NetworkSource {
                 //println!("<<< {:?}", packet);
             } else {
                 break;
+            }
+        }
+
+        Ok(())
+    }
+
+    pub async fn collect_publish_loop(&mut self, publisher: &ConcretePublisher
+    ) -> Result<(), io::Error> {
+        while let Some((message, _)) = self.messages.next().await {
+            //println!("rtnetlink change message - {message:?}");
+            if let NetlinkMessage{payload: NetlinkPayload::InnerMessage(msg), ..} = message {
+                publish_rtnetlink(&publisher, &msg)?;
             }
         }
 
