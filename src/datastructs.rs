@@ -1,4 +1,5 @@
 use std::io;
+use std::net::IpAddr;
 
 pub struct OsInfo {
     pub name: String,
@@ -13,4 +14,5 @@ pub struct KernelInfo {
 
 pub trait Publisher {
     fn publish_static(&self, os_info: &OsInfo, kernel_info: &KernelInfo) -> Result<(), io::Error>;
+    fn publish_net_iface_address(&self, ifname: &str, address: &IpAddr) -> Result<(), io::Error>;
 }

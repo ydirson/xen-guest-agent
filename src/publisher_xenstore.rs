@@ -2,6 +2,7 @@ use crate::datastructs::{OsInfo, KernelInfo,
                          Publisher};
 use std::error::Error;
 use std::io;
+use std::net::IpAddr;
 use xenstore_rs::{Xs, XsOpenFlags, XBTransaction};
 
 pub struct ConcretePublisher {
@@ -28,9 +29,25 @@ impl Publisher for ConcretePublisher {
 
         Ok(())
     }
+
+    fn publish_net_iface_address(&self, ifname: &str, address: &IpAddr) -> Result<(), io::Error> {
+        let key_suffix = munged_address(address);
+        xs_publish(&self.xs, &format!("data/net/{ifname}/{key_suffix}"), "")?;
+
+        Ok(())
+    }
 }
 
 fn xs_publish(xs: &Xs, key: &str, value: &str) -> Result<(), io::Error> {
     println!("W: {}={:?}", key, value);
     xs.write(XBTransaction::Null, key, value)
+}
+
+fn munged_address(addr: &IpAddr) -> String {
+    match addr {
+        IpAddr::V4(addr) =>
+            "ipv4/".to_string() + &addr.to_string().replace('.', "_"),
+        IpAddr::V6(addr) =>
+            "ipv6/".to_string() + &addr.to_string().replace(':', "_"),
+    }
 }

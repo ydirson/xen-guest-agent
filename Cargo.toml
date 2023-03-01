@@ -6,6 +6,11 @@ edition = "2018"
 #rust-version = "1.67"
 
 [dependencies]
+futures = "0.3.26"
+tokio = { version = "1.25.0", features = ["full"] }
+netlink-packet-core = "0.5.0"
+netlink-packet-route = "0.15.0"
+netlink-proto = "0.11.1"
 uname = "0.1.1"
 xenstore-rs = { version = "0.3.2", optional = true }
 
