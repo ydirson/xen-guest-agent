@@ -21,7 +21,7 @@ use netlink_packet_route::{
     RtnlMessage,
 };
 use netlink_proto::{
-    new_connection,
+    self, new_connection,
     sys::{protocols::NETLINK_ROUTE, AsyncSocket, SocketAddr},
 };
 
@@ -31,66 +31,83 @@ use std::fs::File;
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 use std::io::{self, BufRead};
 
+struct NetworkSource {
+    handle: netlink_proto::ConnectionHandle<RtnlMessage>,
+}
+
+impl NetworkSource {
+    pub fn new() -> Result<NetworkSource, io::Error> {
+        let (mut connection, handle, _) = new_connection(NETLINK_ROUTE)?;
+        // What kinds of broadcast messages we want to listen for.
+        let nl_mgroup_flags = 0;
+        let nl_addr = SocketAddr::new(0, nl_mgroup_flags);
+        connection
+            .socket_mut()
+            .socket_mut()
+            .bind(&nl_addr)
+            .expect("failed to bind");
+        tokio::spawn(connection);
+        Ok(NetworkSource { handle })
+    }
+
+    pub async fn collect_publish_current(&mut self, publisher: &ConcretePublisher
+    ) -> Result<(), Box<dyn Error>> {
+        // Create the netlink message that requests the links to be dumped
+        let mut nl_hdr = NetlinkHeader::default();
+        nl_hdr.flags = NLM_F_DUMP | NLM_F_REQUEST;
+        let nl_msg = NetlinkMessage::new(
+            nl_hdr,
+            RtnlMessage::GetLink(LinkMessage::default()).into(),
+        );
+        // Send the request
+        let mut nl_response = self.handle.request(nl_msg, SocketAddr::new(0, 0))?;
+        // Handle response
+        loop {
+            if let Some(packet) = nl_response.next().await {
+                if let NetlinkMessage{payload: NetlinkPayload::InnerMessage(msg), ..} = packet {
+                    publish_rtnetlink(&publisher, &msg)?;
+                }
+                //println!("<<< {:?}", packet);
+            } else {
+                break;
+            }
+        }
+
+        // Create the netlink message that requests the addresses to be dumped
+        let mut nl_hdr = NetlinkHeader::default();
+        nl_hdr.flags = NLM_F_DUMP | NLM_F_REQUEST;
+        let nl_msg = NetlinkMessage::new(
+            nl_hdr,
+            RtnlMessage::GetAddress(AddressMessage::default()).into(),
+        );
+        // Send the request
+        let mut nl_response = self.handle.request(nl_msg, SocketAddr::new(0, 0))?;
+        // Handle response
+        loop {
+            if let Some(packet) = nl_response.next().await {
+                if let NetlinkMessage{payload: NetlinkPayload::InnerMessage(msg), ..} = packet {
+                    publish_rtnetlink(&publisher, &msg)?;
+                }
+                //println!("<<< {:?}", packet);
+            } else {
+                break;
+            }
+        }
+
+        Ok(())
+    }
+}
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     let publisher = ConcretePublisher::new()?;
-
-    let (mut nl_connection,
-         mut nl_handle,
-         _) = new_connection(NETLINK_ROUTE)?;
-    let nl_addr = SocketAddr::new(0, 0);
-    nl_connection
-        .socket_mut()
-        .socket_mut()
-        .bind(&nl_addr)
-        .expect("failed to bind");
-    tokio::spawn(nl_connection);
+    let mut nl = NetworkSource::new()?;
 
     let os_info = collect_os()?;
     let kernel_info = collect_kernel()?;
     publisher.publish_static(&os_info, &kernel_info)?;
 
-    // Create the netlink message that requests the links to be dumped
-    let mut nl_hdr = NetlinkHeader::default();
-    nl_hdr.flags = NLM_F_DUMP | NLM_F_REQUEST;
-    let nl_msg = NetlinkMessage::new(
-        nl_hdr,
-        RtnlMessage::GetLink(LinkMessage::default()).into(),
-    );
-    // Send the request
-    let mut nl_response = nl_handle.request(nl_msg, SocketAddr::new(0, 0))?;
-    // Handle response
-    loop {
-        if let Some(packet) = nl_response.next().await {
-            if let NetlinkMessage{payload: NetlinkPayload::InnerMessage(msg), ..} = packet {
-                publish_rtnetlink(&publisher, &msg)?;
-            }
-            //println!("<<< {:?}", packet);
-        } else {
-            break;
-        }
-    }
-
-    // Create the netlink message that requests the addresses to be dumped
-    let mut nl_hdr = NetlinkHeader::default();
-    nl_hdr.flags = NLM_F_DUMP | NLM_F_REQUEST;
-    let nl_msg = NetlinkMessage::new(
-        nl_hdr,
-        RtnlMessage::GetAddress(AddressMessage::default()).into(),
-    );
-    // Send the request
-    let mut nl_response = nl_handle.request(nl_msg, SocketAddr::new(0, 0))?;
-    // Handle response
-    loop {
-        if let Some(packet) = nl_response.next().await {
-            if let NetlinkMessage{payload: NetlinkPayload::InnerMessage(msg), ..} = packet {
-                publish_rtnetlink(&publisher, &msg)?;
-            }
-            //println!("<<< {:?}", packet);
-        } else {
-            break;
-        }
-    }
+    nl.collect_publish_current(&publisher).await?;
 
     Ok(())
 }
