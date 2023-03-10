@@ -1,5 +1,5 @@
 use crate::helpers::interface_name;
-use crate::publisher::ConcretePublisher;
+use crate::publisher::Publisher;
 use futures::channel::mpsc::UnboundedReceiver;
 use futures::stream::StreamExt;
 use netlink_packet_core::{
@@ -48,7 +48,7 @@ impl NetworkSource {
         Ok(NetworkSource { handle, messages })
     }
 
-    pub async fn collect_publish_current(&mut self, publisher: &ConcretePublisher
+    pub async fn collect_publish_current(&mut self, publisher: &Publisher
     ) -> Result<(), Box<dyn Error>> {
         // Create the netlink message that requests the links to be dumped
         let mut nl_hdr = NetlinkHeader::default();
@@ -95,7 +95,7 @@ impl NetworkSource {
         Ok(())
     }
 
-    pub async fn collect_publish_loop(&mut self, publisher: &ConcretePublisher
+    pub async fn collect_publish_loop(&mut self, publisher: &Publisher
     ) -> Result<(), io::Error> {
         while let Some((message, _)) = self.messages.next().await {
             //println!("rtnetlink change message - {message:?}");
@@ -108,7 +108,7 @@ impl NetworkSource {
     }
 }
 
-fn publish_rtnetlink(publisher: &ConcretePublisher, nl_msg: &RtnlMessage) -> Result<(), io::Error> {
+fn publish_rtnetlink(publisher: &Publisher, nl_msg: &RtnlMessage) -> Result<(), io::Error> {
     match nl_msg {
         RtnlMessage::NewLink(link_msg) => {
             let (ifname, mac_address) = nl_linkmessage_decode(link_msg)?;

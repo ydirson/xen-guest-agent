@@ -8,7 +8,7 @@ mod publisher;
 mod collector_net;
 
 use crate::datastructs::{OsInfo, KernelInfo};
-use crate::publisher::ConcretePublisher;
+use crate::publisher::Publisher;
 use crate::collector_net::NetworkSource;
 
 use std::error::Error;
@@ -17,7 +17,7 @@ use std::io::{self, BufRead};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
-    let publisher = ConcretePublisher::new()?;
+    let publisher = Publisher::new()?;
 
     let os_info = collect_os()?;
     let kernel_info = collect_kernel()?;

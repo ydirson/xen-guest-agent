@@ -4,16 +4,16 @@ use std::io;
 use std::net::IpAddr;
 use xenstore_rs::{Xs, XsOpenFlags, XBTransaction};
 
-pub struct ConcretePublisher {
+pub struct Publisher {
     xs: Xs,
 }
 
 const PROTOCOL_VERSION: &str = "0.1.0";
 
-impl ConcretePublisher {
-    pub fn new() -> Result<ConcretePublisher, Box<dyn Error>> {
+impl Publisher {
+    pub fn new() -> Result<Publisher, Box<dyn Error>> {
         let xs = Xs::new(XsOpenFlags::ReadOnly)?;
-        Ok(ConcretePublisher { xs })
+        Ok(Publisher { xs })
     }
 
     pub fn publish_static(&self, os_info: &OsInfo, kernel_info: &KernelInfo

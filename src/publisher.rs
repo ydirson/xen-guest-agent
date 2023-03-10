@@ -4,12 +4,12 @@ use std::error::Error;
 use std::io;
 use std::net::IpAddr;
 
-pub struct ConcretePublisher {
+pub struct Publisher {
 }
 
-impl ConcretePublisher {
-    pub fn new() -> Result<ConcretePublisher, Box<dyn Error>> {
-        Ok(ConcretePublisher {})
+impl Publisher {
+    pub fn new() -> Result<Publisher, Box<dyn Error>> {
+        Ok(Publisher {})
     }
 
     pub fn publish_static(&self, _os_info: &OsInfo, _kernel_info: &KernelInfo
