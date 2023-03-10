@@ -111,24 +111,13 @@ impl NetworkSource {
 
 fn publish_rtnetlink(publisher: &ConcretePublisher, nl_msg: &RtnlMessage) -> Result<(), io::Error> {
     match nl_msg {
-        RtnlMessage::NewLink(LinkMessage{header, nlas, ..}) => {
-            //println!("{:?}", nlas);
-            let mut address_bytes: Option<&Vec<u8>> = None;
-            for nla in nlas {
-                match nla {
-                    link::nlas::Nla::Address(addr) => address_bytes = Some(addr),
-                    _ => (),
-                }
-            }
-            let mac_address = match address_bytes {
-                Some(address_bytes) => address_bytes.iter()
-                    .map(|b| format!("{b:02x}"))
-                    .collect::<Vec<String>>().join(":"),
-                None => "".to_string(),
-            };
-
-            let ifname = interface_name(header.index);
+        RtnlMessage::NewLink(link_msg) => {
+            let (ifname, mac_address) = nl_linkmessage_decode(link_msg)?;
             publisher.publish_net_iface_mac(&ifname, &mac_address)?;
+        },
+        RtnlMessage::DelLink(link_msg) => {
+            let (ifname, mac_address) = nl_linkmessage_decode(link_msg)?;
+            publisher.unpublish_net_iface_mac(&ifname, &mac_address)?;
         },
         RtnlMessage::NewAddress(address_msg) => {
             // FIXME does not distinguish when IP is on DOWN iface
@@ -144,6 +133,30 @@ fn publish_rtnetlink(publisher: &ConcretePublisher, nl_msg: &RtnlMessage) -> Res
         },
     };
     Ok(())
+}
+
+fn nl_linkmessage_decode(msg: &LinkMessage) -> Result<(String, String), io::Error> {
+    let LinkMessage{header, nlas, ..} = msg;
+    //println!("{header:?} {nlas:?}");
+
+    // extract fields of interest
+    let mut address_bytes: Option<&Vec<u8>> = None;
+    for nla in nlas {
+        if let link::nlas::Nla::Address(addr) = nla {
+            address_bytes = Some(addr);
+        }
+    }
+    // make sure message contains an address
+    let mac_address = address_bytes.map(|address_bytes| address_bytes.iter()
+                                        .map(|b| format!("{b:02x}"))
+                                        .collect::<Vec<String>>().join(":"));
+
+    let ifname = interface_name(header.index);
+
+    match mac_address {
+        Some(mac_address) => Ok((ifname, mac_address)),
+        None => Ok((ifname, "".to_string())), // FIXME ad-hoc ugly, use Option<String> instead
+    }
 }
 
 fn nl_addressmessage_decode(msg: &AddressMessage) -> Result<(String, IpAddr), io::Error> {

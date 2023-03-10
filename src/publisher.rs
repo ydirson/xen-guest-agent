@@ -30,4 +30,7 @@ impl Publisher for ConcretePublisher {
     fn publish_net_iface_mac(&self, _ifname: &str, _mac_address: &str) -> Result<(), io::Error> {
         Ok(())
     }
+    fn unpublish_net_iface_mac(&self, _ifname: &str, _mac_address: &str) -> Result<(), io::Error> {
+        Ok(())
+    }
 }

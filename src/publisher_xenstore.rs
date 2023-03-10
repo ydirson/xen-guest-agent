@@ -49,6 +49,12 @@ impl Publisher for ConcretePublisher {
 
         Ok(())
     }
+
+    fn unpublish_net_iface_mac(&self, ifname: &str, _mac_address: &str) -> Result<(), io::Error> {
+        xs_unpublish(&self.xs, &format!("data/net/{ifname}"))?;
+
+        Ok(())
+    }
 }
 
 fn xs_publish(xs: &Xs, key: &str, value: &str) -> Result<(), io::Error> {
