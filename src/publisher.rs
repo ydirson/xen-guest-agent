@@ -1,5 +1,5 @@
 // default no-op Publisher implementation
-use crate::datastructs::{OsInfo, KernelInfo};
+use crate::datastructs::{OsInfo, KernelInfo, NetInterface};
 use std::error::Error;
 use std::io;
 use std::net::IpAddr;
@@ -16,19 +16,19 @@ impl Publisher {
     ) -> Result<(), io::Error> {
         Ok(())
     }
-    pub fn publish_net_iface_address(&self, _ifname: &str, _address: &IpAddr
+    pub fn publish_net_iface_address(&self, _iface: &NetInterface, _address: &IpAddr
     ) -> Result<(), io::Error> {
         Ok(())
     }
-    pub fn unpublish_net_iface_address(&self, _ifname: &str, _address: &IpAddr
+    pub fn unpublish_net_iface_address(&self, _iface: &NetInterface, _address: &IpAddr
     ) -> Result<(), io::Error> {
         Ok(())
     }
-    pub fn publish_net_iface_mac(&self, _ifname: &str, _mac_address: &str
+    pub fn publish_net_iface_mac(&self, _iface: &NetInterface, _mac_address: &str
     ) -> Result<(), io::Error> {
         Ok(())
     }
-    pub fn unpublish_net_iface_mac(&self, _ifname: &str, _mac_address: &str
+    pub fn unpublish_net_iface_mac(&self, _iface: &NetInterface, _mac_address: &str
     ) -> Result<(), io::Error> {
         Ok(())
     }

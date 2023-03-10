@@ -1,3 +1,4 @@
+use crate::datastructs::NetInterface;
 use crate::helpers::interface_name;
 use crate::publisher::Publisher;
 use futures::channel::mpsc::UnboundedReceiver;
@@ -111,21 +112,21 @@ impl NetworkSource {
 fn publish_rtnetlink(publisher: &Publisher, nl_msg: &RtnlMessage) -> Result<(), io::Error> {
     match nl_msg {
         RtnlMessage::NewLink(link_msg) => {
-            let (ifname, mac_address) = nl_linkmessage_decode(link_msg)?;
-            publisher.publish_net_iface_mac(&ifname, &mac_address)?;
+            let (iface, mac_address) = nl_linkmessage_decode(link_msg)?;
+            publisher.publish_net_iface_mac(&iface, &mac_address)?;
         },
         RtnlMessage::DelLink(link_msg) => {
-            let (ifname, mac_address) = nl_linkmessage_decode(link_msg)?;
-            publisher.unpublish_net_iface_mac(&ifname, &mac_address)?;
+            let (iface, mac_address) = nl_linkmessage_decode(link_msg)?;
+            publisher.unpublish_net_iface_mac(&iface, &mac_address)?;
         },
         RtnlMessage::NewAddress(address_msg) => {
             // FIXME does not distinguish when IP is on DOWN iface
-            let (ifname, address) = nl_addressmessage_decode(address_msg)?;
-            publisher.publish_net_iface_address(&ifname, &address)?;
+            let (iface, address) = nl_addressmessage_decode(address_msg)?;
+            publisher.publish_net_iface_address(&iface, &address)?;
         },
         RtnlMessage::DelAddress(address_msg) => {
-            let (ifname, address) = nl_addressmessage_decode(address_msg)?;
-            publisher.unpublish_net_iface_address(&ifname, &address)?;
+            let (iface, address) = nl_addressmessage_decode(address_msg)?;
+            publisher.unpublish_net_iface_address(&iface, &address)?;
         },
         _ => {
             println!("unhandled RtnlMessage: {:?}", nl_msg);
@@ -134,7 +135,7 @@ fn publish_rtnetlink(publisher: &Publisher, nl_msg: &RtnlMessage) -> Result<(), 
     Ok(())
 }
 
-fn nl_linkmessage_decode(msg: &LinkMessage) -> Result<(String, String), io::Error> {
+fn nl_linkmessage_decode(msg: &LinkMessage) -> Result<(NetInterface, String), io::Error> {
     let LinkMessage{header, nlas, ..} = msg;
     //println!("{header:?} {nlas:?}");
 
@@ -150,15 +151,17 @@ fn nl_linkmessage_decode(msg: &LinkMessage) -> Result<(String, String), io::Erro
                                         .map(|b| format!("{b:02x}"))
                                         .collect::<Vec<String>>().join(":"));
 
-    let ifname = interface_name(header.index);
+    let iface = NetInterface { index: header.index,
+                               name: interface_name(header.index),
+    };
 
     match mac_address {
-        Some(mac_address) => Ok((ifname, mac_address)),
-        None => Ok((ifname, "".to_string())), // FIXME ad-hoc ugly, use Option<String> instead
+        Some(mac_address) => Ok((iface, mac_address)),
+        None => Ok((iface, "".to_string())), // FIXME ad-hoc ugly, use Option<String> instead
     }
 }
 
-fn nl_addressmessage_decode(msg: &AddressMessage) -> Result<(String, IpAddr), io::Error> {
+fn nl_addressmessage_decode(msg: &AddressMessage) -> Result<(NetInterface, IpAddr), io::Error> {
     let AddressMessage{header, nlas, ..} = msg;
     //println!("{header:?} {nlas:?}");
 
@@ -193,10 +196,12 @@ fn nl_addressmessage_decode(msg: &AddressMessage) -> Result<(String, IpAddr), io
         _ => None,
     };
 
-    let ifname = interface_name(header.index);
+    let iface = NetInterface { index: header.index,
+                               name: interface_name(header.index),
+    };
 
     match address {
-        Some(address) => Ok((ifname, address)),
+        Some(address) => Ok((iface, address)),
         None => Err(io::Error::new(io::ErrorKind::InvalidData, "unknown address")),
     }
 }
