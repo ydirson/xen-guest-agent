@@ -1,4 +1,3 @@
-use crate::datastructs::Publisher;
 use crate::helpers::interface_name;
 use crate::publisher::ConcretePublisher;
 use futures::channel::mpsc::UnboundedReceiver;

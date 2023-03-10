@@ -7,8 +7,7 @@ mod publisher;
 #[cfg_attr(feature = "netlink", path = "collector_net_netlink.rs")]
 mod collector_net;
 
-use crate::datastructs::{OsInfo, KernelInfo,
-                         Publisher};
+use crate::datastructs::{OsInfo, KernelInfo};
 use crate::publisher::ConcretePublisher;
 use crate::collector_net::NetworkSource;
 

@@ -1,5 +1,4 @@
-use crate::datastructs::{OsInfo, KernelInfo,
-                         Publisher};
+use crate::datastructs::{OsInfo, KernelInfo};
 use std::error::Error;
 use std::io;
 use std::net::IpAddr;
@@ -9,18 +8,16 @@ pub struct ConcretePublisher {
     xs: Xs,
 }
 
+const PROTOCOL_VERSION: &str = "0.1.0";
+
 impl ConcretePublisher {
     pub fn new() -> Result<ConcretePublisher, Box<dyn Error>> {
         let xs = Xs::new(XsOpenFlags::ReadOnly)?;
         Ok(ConcretePublisher { xs })
     }
-}
 
-const PROTOCOL_VERSION: &str = "0.1.0";
-
-impl Publisher for ConcretePublisher {
-
-    fn publish_static(&self, os_info: &OsInfo, kernel_info: &KernelInfo) -> Result<(), io::Error> {
+    pub fn publish_static(&self, os_info: &OsInfo, kernel_info: &KernelInfo
+    ) -> Result<(), io::Error> {
         xs_publish(&self.xs, "data/xen-guest-agent", PROTOCOL_VERSION)?;
         xs_publish(&self.xs, "data/os/name", &os_info.name)?;
         xs_publish(&self.xs, "data/os/version", &os_info.version)?;
@@ -30,27 +27,31 @@ impl Publisher for ConcretePublisher {
         Ok(())
     }
 
-    fn publish_net_iface_address(&self, ifname: &str, address: &IpAddr) -> Result<(), io::Error> {
+    pub fn publish_net_iface_address(&self, ifname: &str, address: &IpAddr
+    ) -> Result<(), io::Error> {
         let key_suffix = munged_address(address);
         xs_publish(&self.xs, &format!("data/net/{ifname}/{key_suffix}"), "")?;
 
         Ok(())
     }
 
-    fn unpublish_net_iface_address(&self, ifname: &str, address: &IpAddr) -> Result<(), io::Error> {
+    pub fn unpublish_net_iface_address(&self, ifname: &str, address: &IpAddr
+    ) -> Result<(), io::Error> {
         let key_suffix = munged_address(address);
         xs_unpublish(&self.xs, &format!("data/net/{ifname}/{key_suffix}"))?;
 
         Ok(())
     }
 
-    fn publish_net_iface_mac(&self, ifname: &str, mac_address: &str) -> Result<(), io::Error> {
+    pub fn publish_net_iface_mac(&self, ifname: &str, mac_address: &str
+    ) -> Result<(), io::Error> {
         xs_publish(&self.xs, &format!("data/net/{ifname}"), &mac_address)?;
 
         Ok(())
     }
 
-    fn unpublish_net_iface_mac(&self, ifname: &str, _mac_address: &str) -> Result<(), io::Error> {
+    pub fn unpublish_net_iface_mac(&self, ifname: &str, _mac_address: &str
+    ) -> Result<(), io::Error> {
         xs_unpublish(&self.xs, &format!("data/net/{ifname}"))?;
 
         Ok(())
