@@ -35,7 +35,7 @@ pub struct NetworkSource {
 }
 
 impl NetworkSource {
-    pub fn new() -> Result<NetworkSource, io::Error> {
+    pub fn new() -> io::Result<NetworkSource> {
         let (mut connection, handle, messages) = new_connection(NETLINK_ROUTE)?;
         // What kinds of broadcast messages we want to listen for.
         let nl_mgroup_flags = RTMGRP_LINK | RTMGRP_IPV4_IFADDR | RTMGRP_IPV6_IFADDR;
@@ -97,7 +97,7 @@ impl NetworkSource {
     }
 
     pub async fn collect_publish_loop(&mut self, publisher: &Publisher
-    ) -> Result<(), io::Error> {
+    ) -> io::Result<()> {
         while let Some((message, _)) = self.messages.next().await {
             //println!("rtnetlink change message - {message:?}");
             if let NetlinkMessage{payload: NetlinkPayload::InnerMessage(msg), ..} = message {
@@ -109,7 +109,7 @@ impl NetworkSource {
     }
 }
 
-fn publish_rtnetlink(publisher: &Publisher, nl_msg: &RtnlMessage) -> Result<(), io::Error> {
+fn publish_rtnetlink(publisher: &Publisher, nl_msg: &RtnlMessage) -> io::Result<()> {
     match nl_msg {
         RtnlMessage::NewLink(link_msg) => {
             let (iface, mac_address) = nl_linkmessage_decode(link_msg)?;
@@ -135,7 +135,7 @@ fn publish_rtnetlink(publisher: &Publisher, nl_msg: &RtnlMessage) -> Result<(), 
     Ok(())
 }
 
-fn nl_linkmessage_decode(msg: &LinkMessage) -> Result<(NetInterface, String), io::Error> {
+fn nl_linkmessage_decode(msg: &LinkMessage) -> io::Result<(NetInterface, String)> {
     let LinkMessage{header, nlas, ..} = msg;
     //println!("{header:?} {nlas:?}");
 
@@ -161,7 +161,7 @@ fn nl_linkmessage_decode(msg: &LinkMessage) -> Result<(NetInterface, String), io
     }
 }
 
-fn nl_addressmessage_decode(msg: &AddressMessage) -> Result<(NetInterface, IpAddr), io::Error> {
+fn nl_addressmessage_decode(msg: &AddressMessage) -> io::Result<(NetInterface, IpAddr)> {
     let AddressMessage{header, nlas, ..} = msg;
     //println!("{header:?} {nlas:?}");
 

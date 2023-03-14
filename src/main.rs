@@ -35,7 +35,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 }
 
 // /etc/os-release implementation
-fn collect_os() -> Result<OsInfo, io::Error> {
+fn collect_os() -> io::Result<OsInfo> {
     // empty default values, should not happen
     let mut name = "".to_string();
     let mut version = "".to_string();
@@ -66,7 +66,7 @@ fn collect_os() -> Result<OsInfo, io::Error> {
 }
 
 // UNIX uname() implementation
-fn collect_kernel() -> Result<KernelInfo, io::Error> {
+fn collect_kernel() -> io::Result<KernelInfo> {
     let uname_info = uname::uname()?;
     let info = KernelInfo {
         release: uname_info.release,

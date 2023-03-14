@@ -17,7 +17,7 @@ impl Publisher {
     }
 
     pub fn publish_static(&self, os_info: &OsInfo, kernel_info: &KernelInfo
-    ) -> Result<(), io::Error> {
+    ) -> io::Result<()> {
         xs_publish(&self.xs, "data/xen-guest-agent", PROTOCOL_VERSION)?;
         xs_publish(&self.xs, "data/os/name", &os_info.name)?;
         xs_publish(&self.xs, "data/os/version", &os_info.version)?;
@@ -28,7 +28,7 @@ impl Publisher {
     }
 
     pub fn publish_net_iface_address(&self, iface: &NetInterface, address: &IpAddr
-    ) -> Result<(), io::Error> {
+    ) -> io::Result<()> {
         let iface_id = &iface.name;
         let key_suffix = munged_address(address);
         xs_publish(&self.xs, &format!("data/net/{iface_id}/{key_suffix}"),
@@ -38,7 +38,7 @@ impl Publisher {
     }
 
     pub fn unpublish_net_iface_address(&self, iface: &NetInterface, address: &IpAddr
-    ) -> Result<(), io::Error> {
+    ) -> io::Result<()> {
         let iface_id = &iface.name;
         let key_suffix = munged_address(address);
         xs_unpublish(&self.xs, &format!("data/net/{iface_id}/{key_suffix}"))?;
@@ -47,7 +47,7 @@ impl Publisher {
     }
 
     pub fn publish_net_iface_mac(&self, iface: &NetInterface, mac_address: &str
-    ) -> Result<(), io::Error> {
+    ) -> io::Result<()> {
         let iface_id = &iface.name;
         xs_publish(&self.xs, &format!("data/net/{iface_id}"), &mac_address)?;
 
@@ -55,7 +55,7 @@ impl Publisher {
     }
 
     pub fn unpublish_net_iface_mac(&self, iface: &NetInterface, _mac_address: &str
-    ) -> Result<(), io::Error> {
+    ) -> io::Result<()> {
         let iface_id = &iface.name;
         xs_unpublish(&self.xs, &format!("data/net/{iface_id}"))?;
 
@@ -63,12 +63,12 @@ impl Publisher {
     }
 }
 
-fn xs_publish(xs: &Xs, key: &str, value: &str) -> Result<(), io::Error> {
+fn xs_publish(xs: &Xs, key: &str, value: &str) -> io::Result<()> {
     println!("W: {}={:?}", key, value);
     xs.write(XBTransaction::Null, key, value)
 }
 
-fn xs_unpublish(xs: &Xs, key: &str) -> Result<(), io::Error> {
+fn xs_unpublish(xs: &Xs, key: &str) -> io::Result<()> {
     println!("D: {}", key);
     xs.rm(XBTransaction::Null, key)
 }

@@ -6,7 +6,7 @@ pub struct NetworkSource {
 }
 
 impl NetworkSource {
-    pub fn new() -> Result<NetworkSource, io::Error> {
+    pub fn new() -> io::Result<NetworkSource> {
         Ok(NetworkSource {})
     }
 
@@ -16,7 +16,7 @@ impl NetworkSource {
     }
 
     pub async fn collect_publish_loop(&mut self, publisher: &Publisher
-    ) -> Result<(), io::Error> {
+    ) -> io::Result<()> {
         Ok(())
     }
 }
