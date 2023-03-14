@@ -11,6 +11,8 @@ use crate::datastructs::{OsInfo, KernelInfo};
 use crate::publisher::Publisher;
 use crate::collector_net::NetworkSource;
 
+use futures::TryStreamExt;
+use futures::pin_mut;
 use std::error::Error;
 use std::fs::File;
 use std::io::{self, BufRead};
@@ -25,11 +27,16 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     // network events
     let mut collector_net = NetworkSource::new()?;
-    collector_net.collect_publish_current(&publisher).await?;
+    for event in collector_net.collect_current().await? {
+        publisher.publish_netevent(&event)?;
+    }
+    let netevent_stream = collector_net.stream();
+    pin_mut!(netevent_stream); // needed for iteration
 
     // main loop
-    // FIXME this is a bad non-extensible API
-    collector_net.collect_publish_loop(&publisher).await?;
+    while let Some(event) = netevent_stream.try_next().await? {
+        publisher.publish_netevent(&event)?;
+    }
 
     Ok(())
 }

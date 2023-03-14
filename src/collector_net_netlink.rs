@@ -1,8 +1,8 @@
-use crate::datastructs::NetInterface;
+use async_stream::try_stream;
+use crate::datastructs::{NetEvent, NetEventOp, NetInterface};
 use crate::helpers::interface_name;
-use crate::publisher::Publisher;
 use futures::channel::mpsc::UnboundedReceiver;
-use futures::stream::StreamExt;
+use futures::stream::{Stream, StreamExt};
 use netlink_packet_core::{
     NetlinkHeader,
     NetlinkMessage,
@@ -28,6 +28,7 @@ use std::convert::TryInto;
 use std::error::Error;
 use std::io;
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
+use std::vec::Vec;
 
 pub struct NetworkSource {
     handle: netlink_proto::ConnectionHandle<RtnlMessage>,
@@ -49,8 +50,9 @@ impl NetworkSource {
         Ok(NetworkSource { handle, messages })
     }
 
-    pub async fn collect_publish_current(&mut self, publisher: &Publisher
-    ) -> Result<(), Box<dyn Error>> {
+    pub async fn collect_current(&mut self) -> Result<Vec<NetEvent>, Box<dyn Error>> {
+        let mut events = Vec::<NetEvent>::new();
+
         // Create the netlink message that requests the links to be dumped
         let mut nl_hdr = NetlinkHeader::default();
         nl_hdr.flags = NLM_F_DUMP | NLM_F_REQUEST;
@@ -64,7 +66,7 @@ impl NetworkSource {
         loop {
             if let Some(packet) = nl_response.next().await {
                 if let NetlinkMessage{payload: NetlinkPayload::InnerMessage(msg), ..} = packet {
-                    publish_rtnetlink(&publisher, &msg)?;
+                    events.push(netevent_from_rtnetlink(&msg)?);
                 }
                 //println!("<<< {:?}", packet);
             } else {
@@ -85,7 +87,7 @@ impl NetworkSource {
         loop {
             if let Some(packet) = nl_response.next().await {
                 if let NetlinkMessage{payload: NetlinkPayload::InnerMessage(msg), ..} = packet {
-                    publish_rtnetlink(&publisher, &msg)?;
+                    events.push(netevent_from_rtnetlink(&msg)?);
                 }
                 //println!("<<< {:?}", packet);
             } else {
@@ -93,46 +95,46 @@ impl NetworkSource {
             }
         }
 
-        Ok(())
+        Ok(events)
     }
 
-    pub async fn collect_publish_loop(&mut self, publisher: &Publisher
-    ) -> io::Result<()> {
-        while let Some((message, _)) = self.messages.next().await {
-            //println!("rtnetlink change message - {message:?}");
-            if let NetlinkMessage{payload: NetlinkPayload::InnerMessage(msg), ..} = message {
-                publish_rtnetlink(&publisher, &msg)?;
-            }
+    pub fn stream(&mut self) -> impl Stream<Item = io::Result<NetEvent>> + '_ {
+        try_stream! {
+            while let Some((message, _)) = self.messages.next().await {
+                //println!("rtnetlink change message - {message:?}");
+                if let NetlinkMessage{payload: NetlinkPayload::InnerMessage(msg), ..} = message {
+                    yield netevent_from_rtnetlink(&msg)?;
+                }
+            };
         }
-
-        Ok(())
     }
 }
 
-fn publish_rtnetlink(publisher: &Publisher, nl_msg: &RtnlMessage) -> io::Result<()> {
-    match nl_msg {
+fn netevent_from_rtnetlink(nl_msg: &RtnlMessage) -> io::Result<NetEvent> {
+    let event = match nl_msg {
         RtnlMessage::NewLink(link_msg) => {
             let (iface, mac_address) = nl_linkmessage_decode(link_msg)?;
-            publisher.publish_net_iface_mac(&iface, &mac_address)?;
+            NetEvent{iface, op: NetEventOp::AddMac(mac_address)}
         },
         RtnlMessage::DelLink(link_msg) => {
             let (iface, mac_address) = nl_linkmessage_decode(link_msg)?;
-            publisher.unpublish_net_iface_mac(&iface, &mac_address)?;
+            NetEvent{iface, op: NetEventOp::RmMac(mac_address)}
         },
         RtnlMessage::NewAddress(address_msg) => {
             // FIXME does not distinguish when IP is on DOWN iface
             let (iface, address) = nl_addressmessage_decode(address_msg)?;
-            publisher.publish_net_iface_address(&iface, &address)?;
+            NetEvent{iface, op: NetEventOp::AddIp(address)}
         },
         RtnlMessage::DelAddress(address_msg) => {
             let (iface, address) = nl_addressmessage_decode(address_msg)?;
-            publisher.unpublish_net_iface_address(&iface, &address)?;
+            NetEvent{iface, op: NetEventOp::RmIp(address)}
         },
         _ => {
-            println!("unhandled RtnlMessage: {:?}", nl_msg);
+            return Err(io::Error::new(io::ErrorKind::InvalidData,
+                                      "unhandled RtnlMessage: {nl_msg:?}"));
         },
     };
-    Ok(())
+    Ok(event)
 }
 
 fn nl_linkmessage_decode(msg: &LinkMessage) -> io::Result<(NetInterface, String)> {

@@ -1,4 +1,4 @@
-use crate::datastructs::{OsInfo, KernelInfo, NetInterface};
+use crate::datastructs::{OsInfo, KernelInfo, NetEvent, NetEventOp};
 use std::error::Error;
 use std::io;
 use std::net::IpAddr;
@@ -27,38 +27,28 @@ impl Publisher {
         Ok(())
     }
 
-    pub fn publish_net_iface_address(&self, iface: &NetInterface, address: &IpAddr
-    ) -> io::Result<()> {
-        let iface_id = &iface.name;
-        let key_suffix = munged_address(address);
-        xs_publish(&self.xs, &format!("data/net/{iface_id}/{key_suffix}"),
-                   "")?;
-
-        Ok(())
-    }
-
-    pub fn unpublish_net_iface_address(&self, iface: &NetInterface, address: &IpAddr
-    ) -> io::Result<()> {
-        let iface_id = &iface.name;
-        let key_suffix = munged_address(address);
-        xs_unpublish(&self.xs, &format!("data/net/{iface_id}/{key_suffix}"))?;
-
-        Ok(())
-    }
-
-    pub fn publish_net_iface_mac(&self, iface: &NetInterface, mac_address: &str
-    ) -> io::Result<()> {
-        let iface_id = &iface.name;
-        xs_publish(&self.xs, &format!("data/net/{iface_id}"), &mac_address)?;
-
-        Ok(())
-    }
-
-    pub fn unpublish_net_iface_mac(&self, iface: &NetInterface, _mac_address: &str
-    ) -> io::Result<()> {
-        let iface_id = &iface.name;
-        xs_unpublish(&self.xs, &format!("data/net/{iface_id}"))?;
-
+    pub fn publish_netevent(&self, event: &NetEvent) -> io::Result<()> {
+        match event {
+            NetEvent{iface, op: NetEventOp::AddIp(address)} => {
+                let iface_id = &iface.name;
+                let key_suffix = munged_address(address);
+                xs_publish(&self.xs, &format!("data/net/{iface_id}/{key_suffix}"),
+                           "")?;
+            },
+            NetEvent{iface, op: NetEventOp::RmIp(address)} => {
+                let iface_id = &iface.name;
+                let key_suffix = munged_address(address);
+                xs_unpublish(&self.xs, &format!("data/net/{iface_id}/{key_suffix}"))?;
+            },
+            NetEvent{iface, op: NetEventOp::AddMac(mac_address)} => {
+                let iface_id = &iface.name;
+                xs_publish(&self.xs, &format!("data/net/{iface_id}"), &mac_address)?;
+            },
+            NetEvent{iface, op: NetEventOp::RmMac(_)} => {
+                let iface_id = &iface.name;
+                xs_unpublish(&self.xs, &format!("data/net/{iface_id}"))?;
+            },
+        }
         Ok(())
     }
 }

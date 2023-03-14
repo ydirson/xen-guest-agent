@@ -1,4 +1,5 @@
-use crate::publisher::Publisher;
+use crate::datastructs::NetEvent;
+use futures::stream::Stream;
 use std::error::Error;
 use std::io;
 
@@ -10,13 +11,11 @@ impl NetworkSource {
         Ok(NetworkSource {})
     }
 
-    pub async fn collect_publish_current(&mut self, __publisher: &Publisher
-    ) -> Result<(), Box<dyn Error>> {
-        Ok(())
+    pub async fn collect_current(&mut self) -> Result<Vec<NetEvent>, Box<dyn Error>> {
+        Ok(vec!())
     }
 
-    pub async fn collect_publish_loop(&mut self, publisher: &Publisher
-    ) -> io::Result<()> {
-        Ok(())
+    pub fn stream(&mut self) -> impl Stream<Item = io::Result<NetEvent>> + '_ {
+        futures::stream::empty::<io::Result<NetEvent>>()
     }
 }
