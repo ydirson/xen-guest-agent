@@ -8,15 +8,16 @@ edition = "2018"
 [dependencies]
 futures = "0.3.26"
 tokio = { version = "1.25.0", features = ["full"] }
-netlink-packet-core = "0.5.0"
-netlink-packet-route = "0.15.0"
-netlink-proto = "0.11.1"
+netlink-packet-core = { version = "0.5.0", optional = true }
+netlink-packet-route = { version = "0.15.0", optional = true }
+netlink-proto = { version = "0.11.1", optional = true }
 uname = "0.1.1"
 xenstore-rs = { version = "0.3.2", optional = true }
 
 [features]
-default = ["xenstore"]
+default = ["xenstore", "netlink"]
 xenstore = ["dep:xenstore-rs"]
+netlink = ["dep:netlink-proto", "dep:netlink-packet-core", "dep:netlink-packet-route"]
 
 [patch.crates-io]
 xenstore-rs = { git = "https://github.com/xcp-ng/xenstore-rs.git", branch = "xs_write" }
