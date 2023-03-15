@@ -12,6 +12,7 @@ pub struct KernelInfo {
 pub struct NetInterface {
     pub index: u32,
     pub name: String,
+    pub vif_index: Option<u32>, // on Xen PV device only
 }
 
 pub enum NetEventOp {

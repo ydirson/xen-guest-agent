@@ -7,6 +7,9 @@ mod publisher;
 #[cfg_attr(feature = "netlink", path = "collector_net_netlink.rs")]
 mod collector_net;
 
+#[cfg_attr(target_os = "linux", path = "vif_detect_linux.rs")]
+mod vif_detect;
+
 use crate::datastructs::{OsInfo, KernelInfo};
 use crate::publisher::Publisher;
 use crate::collector_net::NetworkSource;
@@ -27,14 +30,16 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     // network events
     let mut collector_net = NetworkSource::new()?;
-    for event in collector_net.collect_current().await? {
+    for mut event in collector_net.collect_current().await? {
+        vif_detect::add_vif_info(&mut event);
         publisher.publish_netevent(&event)?;
     }
     let netevent_stream = collector_net.stream();
     pin_mut!(netevent_stream); // needed for iteration
 
     // main loop
-    while let Some(event) = netevent_stream.try_next().await? {
+    while let Some(mut event) = netevent_stream.try_next().await? {
+        vif_detect::add_vif_info(&mut event);
         publisher.publish_netevent(&event)?;
     }
 

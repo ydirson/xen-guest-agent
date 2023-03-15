@@ -155,6 +155,7 @@ fn nl_linkmessage_decode(msg: &LinkMessage) -> io::Result<(NetInterface, String)
 
     let iface = NetInterface { index: header.index,
                                name: interface_name(header.index),
+                               vif_index: None,
     };
 
     match mac_address {
@@ -200,6 +201,7 @@ fn nl_addressmessage_decode(msg: &AddressMessage) -> io::Result<(NetInterface, I
 
     let iface = NetInterface { index: header.index,
                                name: interface_name(header.index),
+                               vif_index: None,
     };
 
     match address {
