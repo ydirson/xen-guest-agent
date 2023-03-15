@@ -20,6 +20,8 @@ use std::error::Error;
 use std::fs::File;
 use std::io::{self, BufRead};
 
+const ONLY_VIF: bool = true;    // FIXME make this a CLI flag
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     let publisher = Publisher::new()?;
@@ -32,7 +34,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let mut collector_net = NetworkSource::new()?;
     for mut event in collector_net.collect_current().await? {
         vif_detect::add_vif_info(&mut event);
-        publisher.publish_netevent(&event)?;
+        if ! (ONLY_VIF && event.iface.vif_index.is_none()) {
+            publisher.publish_netevent(&event)?;
+        }
     }
     let netevent_stream = collector_net.stream();
     pin_mut!(netevent_stream); // needed for iteration
@@ -40,7 +44,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // main loop
     while let Some(mut event) = netevent_stream.try_next().await? {
         vif_detect::add_vif_info(&mut event);
-        publisher.publish_netevent(&event)?;
+        if ! (ONLY_VIF && event.iface.vif_index.is_none()) {
+            publisher.publish_netevent(&event)?;
+        }
     }
 
     Ok(())
