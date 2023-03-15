@@ -17,6 +17,7 @@ mod collector_net;
 mod collector_memory;
 
 #[cfg_attr(target_os = "linux", path = "vif_detect_linux.rs")]
+#[cfg_attr(target_os = "freebsd", path = "vif_detect_freebsd.rs")]
 mod vif_detect;
 
 use crate::datastructs::KernelInfo;
