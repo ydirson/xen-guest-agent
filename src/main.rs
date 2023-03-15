@@ -1,7 +1,8 @@
 mod datastructs;
 mod helpers;
 
-#[cfg_attr(feature = "xenstore", path = "publisher_xenstore.rs")]
+#[cfg_attr(feature = "xenstore", path = "publisher_xenstore-std.rs")]
+#[cfg_attr(feature = "xenstore-rfc", path = "publisher_xenstore-rfc.rs")]
 mod publisher;
 
 #[cfg_attr(feature = "netlink", path = "collector_net_netlink.rs")]

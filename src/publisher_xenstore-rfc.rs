@@ -10,6 +10,8 @@ pub struct Publisher {
 
 const PROTOCOL_VERSION: &str = "0.1.0";
 
+// FIXME: this should be a runtime config of xenstore-std.rs
+
 impl Publisher {
     pub fn new() -> Result<Publisher, Box<dyn Error>> {
         let xs = Xs::new(XsOpenFlags::ReadOnly)?;
@@ -27,6 +29,7 @@ impl Publisher {
         Ok(())
     }
 
+    #[allow(clippy::useless_format)]
     pub fn publish_netevent(&self, event: &NetEvent) -> io::Result<()> {
         let iface_id = &event.iface.name;
         let xs_iface_prefix = format!("data/net/{iface_id}");
@@ -40,7 +43,7 @@ impl Publisher {
                 xs_unpublish(&self.xs, &format!("{xs_iface_prefix}/{key_suffix}"))?;
             },
             NetEventOp::AddMac(mac_address) => {
-                xs_publish(&self.xs, &format!("{xs_iface_prefix}"), &mac_address)?;
+                xs_publish(&self.xs, &format!("{xs_iface_prefix}"), mac_address)?;
             },
             NetEventOp::RmMac(_) => {
                 xs_unpublish(&self.xs, &format!("{xs_iface_prefix}"))?;

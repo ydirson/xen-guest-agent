@@ -20,6 +20,7 @@ async-stream = "0.3.4"
 [features]
 default = ["xenstore", "netlink"]
 xenstore = ["dep:xenstore-rs"]
+xenstore-rfc = ["dep:xenstore-rs"]
 netlink = ["dep:netlink-proto", "dep:netlink-packet-core", "dep:netlink-packet-route",
            "dep:rtnetlink"]
 
