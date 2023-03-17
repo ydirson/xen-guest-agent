@@ -25,7 +25,7 @@ const ONLY_VIF: bool = true;    // FIXME make this a CLI flag
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
-    let publisher = Publisher::new()?;
+    let mut publisher = Publisher::new()?;
 
     let os_info = collect_os()?;
     let kernel_info = collect_kernel()?;
