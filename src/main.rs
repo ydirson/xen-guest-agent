@@ -19,8 +19,10 @@ use futures::{FutureExt, pin_mut, select, TryStreamExt};
 use std::error::Error;
 use std::fs::File;
 use std::io::{self, BufRead};
+use std::time::Duration;
 
 const ONLY_VIF: bool = true;    // FIXME make this a CLI flag
+const MEM_PERIOD_SECONDS: u64 = 60;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
@@ -29,6 +31,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let os_info = collect_os()?;
     let kernel_info = collect_kernel()?;
     publisher.publish_static(&os_info, &kernel_info)?;
+
+    // periodic memory stat
+    let mut timer_stream = tokio::time::interval(Duration::from_secs(MEM_PERIOD_SECONDS));
 
     // network events
     let mut collector_net = NetworkSource::new()?;
@@ -55,6 +60,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     // FIXME can't we handle those in `select!` directly?
                     None => { /* closed? */ },
                 };
+            },
+            _ = timer_stream.tick().fuse() => {
+                println!("tick");
             },
             complete => break,
         }
