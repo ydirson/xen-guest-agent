@@ -15,8 +15,7 @@ use crate::datastructs::{OsInfo, KernelInfo};
 use crate::publisher::Publisher;
 use crate::collector_net::NetworkSource;
 
-use futures::TryStreamExt;
-use futures::pin_mut;
+use futures::{FutureExt, pin_mut, select, TryStreamExt};
 use std::error::Error;
 use std::fs::File;
 use std::io::{self, BufRead};
@@ -43,10 +42,21 @@ async fn main() -> Result<(), Box<dyn Error>> {
     pin_mut!(netevent_stream); // needed for iteration
 
     // main loop
-    while let Some(mut event) = netevent_stream.try_next().await? {
-        vif_detect::add_vif_info(&mut event);
-        if ! (ONLY_VIF && event.iface.vif_index.is_none()) {
-            publisher.publish_netevent(&event)?;
+    loop {
+        select! {
+            event = netevent_stream.try_next().fuse() => {
+                match event? {
+                    Some(mut event) => {
+                        vif_detect::add_vif_info(&mut event);
+                        if ! (ONLY_VIF && event.iface.vif_index.is_none()) {
+                            publisher.publish_netevent(&event)?;
+                        }
+                    },
+                    // FIXME can't we handle those in `select!` directly?
+                    None => { /* closed? */ },
+                };
+            },
+            complete => break,
         }
     }
 
