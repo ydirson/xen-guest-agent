@@ -33,7 +33,8 @@ impl Publisher {
         Ok(Publisher { xs, ip_addresses })
     }
 
-    pub fn publish_static(&self, os_info: &OsInfo, kernel_info: &KernelInfo
+    pub fn publish_static(&self, os_info: &OsInfo, kernel_info: &KernelInfo,
+                          mem_total_kb: Option<usize>,
     ) -> io::Result<()> {
         // FIXME this is not anywhere standard, just minimal XS compatibility
         xs_publish(&self.xs, "attr/PVAddons/MajorVersion", AGENT_VERSION_MAJOR)?;
@@ -49,6 +50,15 @@ impl Publisher {
         xs_publish(&self.xs, "data/os_minorver", "0")?;
         xs_publish(&self.xs, "data/os_uname", &kernel_info.release)?;
 
+        if let Some(mem_total_kb) = mem_total_kb {
+            xs_publish(&self.xs, "data/meminfo_total", &mem_total_kb.to_string())?;
+        }
+
+        Ok(())
+    }
+
+    pub fn publish_memfree(&self, mem_free_kb: usize) -> io::Result<()> {
+        xs_publish(&self.xs, "data/meminfo_free", &mem_free_kb.to_string())?;
         Ok(())
     }
 

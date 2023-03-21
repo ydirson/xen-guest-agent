@@ -18,7 +18,8 @@ impl Publisher {
         Ok(Publisher { xs })
     }
 
-    pub fn publish_static(&self, os_info: &OsInfo, kernel_info: &KernelInfo
+    pub fn publish_static(&self, os_info: &OsInfo, kernel_info: &KernelInfo,
+                          _mem_total_kb: Option<usize>,
     ) -> io::Result<()> {
         xs_publish(&self.xs, "data/xen-guest-agent", PROTOCOL_VERSION)?;
         xs_publish(&self.xs, "data/os/name", &os_info.name)?;
@@ -26,6 +27,11 @@ impl Publisher {
         xs_publish(&self.xs, "data/os/class", "unix")?;
         xs_publish(&self.xs, "data/os/unix/kernel-version", &kernel_info.release)?;
 
+        Ok(())
+    }
+
+    pub fn publish_memfree(&self, _mem_free_kb: usize) -> io::Result<()> {
+        //xs_publish(&self.xs, "data/meminfo_free", &mem_free_kb.to_string())?;
         Ok(())
     }
 

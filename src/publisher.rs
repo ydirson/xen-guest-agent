@@ -11,11 +11,15 @@ impl Publisher {
         Ok(Publisher {})
     }
 
-    pub fn publish_static(&self, _os_info: &OsInfo, _kernel_info: &KernelInfo
+    pub fn publish_static(&self, _os_info: &OsInfo, _kernel_info: &KernelInfo,
+                          _mem_total_kb: Option<usize>,
     ) -> io::Result<()> {
         Ok(())
     }
-    pub fn publish_netevent(&self, event: &NetEvent) -> io::Result<()> {
+    pub fn publish_memfree(&mut self, _mem_free_kb: usize) -> io::Result<()> {
+        Ok(())
+    }
+    pub fn publish_netevent(&self, _event: &NetEvent) -> io::Result<()> {
         Ok(())
     }
 }

@@ -8,12 +8,16 @@ mod publisher;
 #[cfg_attr(feature = "netlink", path = "collector_net_netlink.rs")]
 mod collector_net;
 
+#[cfg_attr(target_os = "linux", path = "collector_memory_linux.rs")]
+mod collector_memory;
+
 #[cfg_attr(target_os = "linux", path = "vif_detect_linux.rs")]
 mod vif_detect;
 
 use crate::datastructs::{OsInfo, KernelInfo};
 use crate::publisher::Publisher;
 use crate::collector_net::NetworkSource;
+use crate::collector_memory::MemorySource;
 
 use futures::{FutureExt, pin_mut, select, TryStreamExt};
 use std::error::Error;
@@ -28,9 +32,18 @@ const MEM_PERIOD_SECONDS: u64 = 60;
 async fn main() -> Result<(), Box<dyn Error>> {
     let mut publisher = Publisher::new()?;
 
+    let mut collector_memory = MemorySource::new()?;
+
     let os_info = collect_os()?;
     let kernel_info = collect_kernel()?;
-    publisher.publish_static(&os_info, &kernel_info)?;
+    let mem_total_kb = match collector_memory.get_total_kb() {
+        Ok(mem_total_kb) => Some(mem_total_kb),
+        Err(error) => { println!("No memory stats: {error}");
+                        None
+        },
+        // FIXME should propagate errors other than io::ErrorKind::Unsupported
+    };
+    publisher.publish_static(&os_info, &kernel_info, mem_total_kb)?;
 
     // periodic memory stat
     let mut timer_stream = tokio::time::interval(Duration::from_secs(MEM_PERIOD_SECONDS));
@@ -62,7 +75,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 };
             },
             _ = timer_stream.tick().fuse() => {
-                println!("tick");
+                match collector_memory.get_available_kb() {
+                    Ok(mem_avail_kb) => publisher.publish_memfree(mem_avail_kb)?,
+                    Err(_) => (),
+                    // FIXME should propagate errors other than io::ErrorKind::Unsupported
+                }
             },
             complete => break,
         }
