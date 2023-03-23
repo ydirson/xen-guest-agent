@@ -12,24 +12,83 @@ Goals are:
 
 ## General design
 
-The agent might use `udev` to avoid creating a deamon.
-
 ### Features
 
-The agent should gather some guest information, and writing them to the xenstore, so dom0 will be able to read it.
+The agent gathers some guest information, and writes them to xenstore
+so tooling in dom0 can read it.  The default behavior is to be
+compatible with the XAPI toolstack as currently used in XCP-ng and
+Citrix Hypervisor / Xenserver, and thus roughly follow what
+`xe-guest-utilities` is doing.
 
-Current features (from `xe-guest-utilities`):
+We want it to become more largely useful; for this the collection
+scope and publication structure still need to stabilize, and proposals
+are discussed in [a separate document](doc/structure.md).
+
+Current features:
 
 * Network metrics (vif ID, MAC, v4/v6 address)
 * OS reporting
-* Disk metrics
 * Memory metrics (total, free)
-* PV drivers version
+
+Some features to consider (from `xe-guest-utilities`):
+* Disk metrics
+* "PV drivers version"
 * If ballooning is enabled
+
+### Rust prototype
+
+Current state, limitations:
+
+* we decided to play with Rust [for various
+  reasons](https://xcp-ng.org/blog/2023/03/17/bringing-rust-to-the-xen-project/)
+* the prototype was written with Rust async programming features, both
+  because it is the natural way to use the netlink crates, and for
+  experimentation purposes to get a grasp on Rust's take on the
+  subject
+* it is written around the idea of various information collectors
+  (today: OS, kernel, network, memory) and publishers (today: XenStore
+  with compatibility for today's Xenserver tool aka "xenstore-std",
+  XenStore with an alternative structure aka "xenstore-rfc"), with
+  additional helpers (identification of whether a NIC is a VIF, with a
+  rough /sys-based implementation for Linux, and a rough untested
+  implementation for FreeBSD based on interface name)
+* access to Xenstore is done using Mathieu Tarral's early-stage work
+  on [Rust Xenstore bindings](https://lib.rs/crates/xenstore-rs),
+  which we [enhanced with write
+  access](https://github.com/Wenzel/xenstore/pull/10).  An official
+  Rust Xenstore API will be required at some point; another candidate
+  would be Starlab's [pure-Rust libxenstore
+  implementation](https://github.com/starlab-io/xenstore-rs), which is
+  also in a prototype state
+* the "xenstore-std" publisher exposes only information currently
+  identified as used by the XAPI/XenOrchestra stack (notably MAC
+  addresses for VIFs are not exposed yet, even though they appear in
+  [the xenstore-path
+  doc](https://xenbits.xen.org/docs/unstable/misc/xenstore-paths.html#domain-controlled-paths))
+* the Linux VIF-identification implementation is simplistic, skipped
+  the SR-IOV case
+* the fallback VIF-identification implementation (expectedly) causes
+  no NIC to be reported at all
+* the VIF-identification mechanism is currently disabled by editing
+  the code (`ONLY_VIF` flag), and this interferes with the
+  `XENSTORE_SCHEMA=rfc` mode, which would otherwise be able to publish
+  information about non-VIF network interfaces
+* for ease of experimentation, alternative implementations of
+  collectors and publishers are selectable at compile-time, though a
+  number of those choices will make sense as runtime options
+* similarly, some behaviours are tunable by modifying flags in the code
+* a single implementation for network-configuration info listening to
+  netlink events is provided, with as alternative a no-op collector
+  for un-/not-yet- supported OS
+* OS identification is very basic, relying on /etc/os-release, it
+  could make sense to use an existing implementation like
+  [os_info](https://docs.rs/os_info/latest/os_info/), to be evaluated
+* error handling is typical of a proto (but Rust will make fixing this
+  unexpectedly easy, having forced the use of well-identified
+  constructs like `.unwrap()` and `?` right from this early stage)
+
 
 ## What's next?
 
-0. Present this repo to the community during next Xen community call
-1. Build a PoC from scratch, for Linux, returning IP address
-2. Discuss with the community about the PoC before going further (design, review etc.)
-3. Merge in the main branch and start to advertise about it
+0. Discuss with the community about the PoC before going further (design, review etc.)
+1. Converge with an implementation in the main branch and start to advertise about it
