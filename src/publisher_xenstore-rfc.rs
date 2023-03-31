@@ -1,4 +1,4 @@
-use crate::datastructs::{OsInfo, KernelInfo, NetEvent, NetEventOp};
+use crate::datastructs::{KernelInfo, NetEvent, NetEventOp};
 use std::error::Error;
 use std::io;
 use std::net::IpAddr;
@@ -18,12 +18,13 @@ impl Publisher {
         Ok(Publisher { xs })
     }
 
-    pub fn publish_static(&self, os_info: &OsInfo, kernel_info: &KernelInfo,
+    pub fn publish_static(&self, os_info: &os_info::Info, kernel_info: &KernelInfo,
                           _mem_total_kb: Option<usize>,
     ) -> io::Result<()> {
         xs_publish(&self.xs, "data/xen-guest-agent", PROTOCOL_VERSION)?;
-        xs_publish(&self.xs, "data/os/name", &os_info.name)?;
-        xs_publish(&self.xs, "data/os/version", &os_info.version)?;
+        xs_publish(&self.xs, "data/os/name",
+                   &format!("{} {}", os_info.os_type(), os_info.version()))?;
+        xs_publish(&self.xs, "data/os/version", &os_info.version().to_string())?;
         xs_publish(&self.xs, "data/os/class", "unix")?;
         xs_publish(&self.xs, "data/os/unix/kernel-version", &kernel_info.release)?;
 

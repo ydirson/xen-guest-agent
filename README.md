@@ -80,9 +80,6 @@ Current state, limitations:
 * a single implementation for network-configuration info listening to
   netlink events is provided, with as alternative a no-op collector
   for un-/not-yet- supported OS
-* OS identification is very basic, relying on /etc/os-release, it
-  could make sense to use an existing implementation like
-  [os_info](https://docs.rs/os_info/latest/os_info/), to be evaluated
 * error handling is typical of a proto (but Rust will make fixing this
   unexpectedly easy, having forced the use of well-identified
   constructs like `.unwrap()` and `?` right from this early stage)

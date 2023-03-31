@@ -1,4 +1,4 @@
-use crate::datastructs::{OsInfo, KernelInfo, NetEvent, NetEventOp, NetInterface};
+use crate::datastructs::{KernelInfo, NetEvent, NetEventOp, NetInterface};
 use std::collections::HashMap;
 use std::error::Error;
 use std::io;
@@ -33,7 +33,7 @@ impl Publisher {
         Ok(Publisher { xs, ip_addresses })
     }
 
-    pub fn publish_static(&self, os_info: &OsInfo, kernel_info: &KernelInfo,
+    pub fn publish_static(&self, os_info: &os_info::Info, kernel_info: &KernelInfo,
                           mem_total_kb: Option<usize>,
     ) -> io::Result<()> {
         // FIXME this is not anywhere standard, just minimal XS compatibility
@@ -42,12 +42,19 @@ impl Publisher {
         xs_publish(&self.xs, "attr/PVAddons/MicroVersion", AGENT_VERSION_MICRO)?;
         xs_publish(&self.xs, "attr/PVAddons/BuildVersion", AGENT_VERSION_BUILD)?;
 
-        xs_publish(&self.xs, "data/os_name", &os_info.name)?;
+        xs_publish(&self.xs, "data/os_distro", &os_info.os_type().to_string())?;
+        xs_publish(&self.xs, "data/os_name",
+                   &format!("{} {}", os_info.os_type(), os_info.version()))?;
         // FIXME .version only has "major" component right now; not a
         // big deal for a proto, os_minorver is known to be unreliable
         // in xe-guest-utilities at least for Debian
-        xs_publish(&self.xs, "data/os_majorver", &os_info.version)?;
-        xs_publish(&self.xs, "data/os_minorver", "0")?;
+        match os_info.version() {
+            os_info::Version::Semantic(major, minor, _patch) => {
+                xs_publish(&self.xs, "data/os_majorver", &major.to_string())?;
+                xs_publish(&self.xs, "data/os_minorver", &minor.to_string())?;
+            },
+            _ => (),            // FIXME what to do with strings?
+        }
         xs_publish(&self.xs, "data/os_uname", &kernel_info.release)?;
 
         if let Some(mem_total_kb) = mem_total_kb {

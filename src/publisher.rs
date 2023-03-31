@@ -1,5 +1,6 @@
 // default no-op Publisher implementation
-use crate::datastructs::{OsInfo, KernelInfo, NetEvent};
+use crate::datastructs::{KernelInfo, NetEvent};
+use os_info;
 use std::error::Error;
 use std::io;
 
@@ -11,7 +12,7 @@ impl Publisher {
         Ok(Publisher {})
     }
 
-    pub fn publish_static(&self, _os_info: &OsInfo, _kernel_info: &KernelInfo,
+    pub fn publish_static(&self, _os_info: &os_info::Info, _kernel_info: &KernelInfo,
                           _mem_total_kb: Option<usize>,
     ) -> io::Result<()> {
         Ok(())

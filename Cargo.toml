@@ -16,6 +16,7 @@ rtnetlink = { version = "0.12.0", optional = true }
 uname = "0.1.1"
 xenstore-rs = { version = "0.3.2", optional = true }
 async-stream = "0.3.4"
+os_info = { version = "3", default-features = false }
 
 [features]
 default = ["xenstore", "netlink"]

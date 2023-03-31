@@ -14,15 +14,14 @@ mod collector_memory;
 #[cfg_attr(target_os = "linux", path = "vif_detect_linux.rs")]
 mod vif_detect;
 
-use crate::datastructs::{OsInfo, KernelInfo};
+use crate::datastructs::KernelInfo;
 use crate::publisher::Publisher;
 use crate::collector_net::NetworkSource;
 use crate::collector_memory::MemorySource;
 
 use futures::{FutureExt, pin_mut, select, TryStreamExt};
 use std::error::Error;
-use std::fs::File;
-use std::io::{self, BufRead};
+use std::io;
 use std::time::Duration;
 
 const ONLY_VIF: bool = true;    // FIXME make this a CLI flag
@@ -34,7 +33,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let mut collector_memory = MemorySource::new()?;
 
-    let os_info = collect_os()?;
     let kernel_info = collect_kernel()?;
     let mem_total_kb = match collector_memory.get_total_kb() {
         Ok(mem_total_kb) => Some(mem_total_kb),
@@ -43,7 +41,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         },
         // FIXME should propagate errors other than io::ErrorKind::Unsupported
     };
-    publisher.publish_static(&os_info, &kernel_info, mem_total_kb)?;
+    publisher.publish_static(&os_info::get(), &kernel_info, mem_total_kb)?;
 
     // periodic memory stat
     let mut timer_stream = tokio::time::interval(Duration::from_secs(MEM_PERIOD_SECONDS));
@@ -86,37 +84,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
     }
 
     Ok(())
-}
-
-// /etc/os-release implementation
-fn collect_os() -> io::Result<OsInfo> {
-    // empty default values, should not happen
-    let mut name = "".to_string();
-    let mut version = "".to_string();
-
-    let file = File::open("/etc/os-release")?;
-    for line_result in io::BufReader::new(file).lines() {
-        match line_result {
-            Ok(line) => { // FIXME not proper parsing of quoted shell string vars
-                let v: Vec<&str> = line.split("=").collect();
-                let (key, value) = (v[0], v[1]);
-                let value = value.trim_matches('"').to_string();
-                match key {
-                    "NAME" => name = value,
-                    "VERSION_ID" => version = value,
-                    _ => (),
-                };
-            },
-            Err(err) => return Err(err), // FIXME propagation
-        }
-    }
-
-    let info = OsInfo {
-        name,
-        version,
-    };
-
-    Ok(info)
 }
 
 // UNIX uname() implementation
