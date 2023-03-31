@@ -1,6 +1,6 @@
 use async_stream::try_stream;
 use crate::datastructs::{NetEvent, NetEventOp, NetInterface};
-use crate::helpers::interface_name;
+use crate::unix_helpers::interface_name;
 use futures::channel::mpsc::UnboundedReceiver;
 use futures::stream::{Stream, StreamExt};
 use netlink_packet_core::{
