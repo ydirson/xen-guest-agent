@@ -18,7 +18,7 @@ impl Publisher {
         Ok(Publisher { xs })
     }
 
-    pub fn publish_static(&self, os_info: &os_info::Info, kernel_info: &KernelInfo,
+    pub fn publish_static(&self, os_info: &os_info::Info, kernel_info: &Option<KernelInfo>,
                           _mem_total_kb: Option<usize>,
     ) -> io::Result<()> {
         xs_publish(&self.xs, "data/xen-guest-agent", PROTOCOL_VERSION)?;
@@ -26,7 +26,9 @@ impl Publisher {
                    &format!("{} {}", os_info.os_type(), os_info.version()))?;
         xs_publish(&self.xs, "data/os/version", &os_info.version().to_string())?;
         xs_publish(&self.xs, "data/os/class", "unix")?;
-        xs_publish(&self.xs, "data/os/unix/kernel-version", &kernel_info.release)?;
+        if let Some(kernel_info) = kernel_info {
+            xs_publish(&self.xs, "data/os/unix/kernel-version", &kernel_info.release)?;
+        }
 
         Ok(())
     }

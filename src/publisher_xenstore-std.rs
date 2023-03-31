@@ -33,7 +33,7 @@ impl Publisher {
         Ok(Publisher { xs, ip_addresses })
     }
 
-    pub fn publish_static(&self, os_info: &os_info::Info, kernel_info: &KernelInfo,
+    pub fn publish_static(&self, os_info: &os_info::Info, kernel_info: &Option<KernelInfo>,
                           mem_total_kb: Option<usize>,
     ) -> io::Result<()> {
         // FIXME this is not anywhere standard, just minimal XS compatibility
@@ -55,7 +55,9 @@ impl Publisher {
             },
             _ => (),            // FIXME what to do with strings?
         }
-        xs_publish(&self.xs, "data/os_uname", &kernel_info.release)?;
+        if let Some(kernel_info) = kernel_info {
+            xs_publish(&self.xs, "data/os_uname", &kernel_info.release)?;
+        }
 
         if let Some(mem_total_kb) = mem_total_kb {
             xs_publish(&self.xs, "data/meminfo_total", &mem_total_kb.to_string())?;

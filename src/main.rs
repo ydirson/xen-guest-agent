@@ -87,11 +87,18 @@ async fn main() -> Result<(), Box<dyn Error>> {
 }
 
 // UNIX uname() implementation
-fn collect_kernel() -> io::Result<KernelInfo> {
+#[cfg(unix)]
+fn collect_kernel() -> io::Result<Option<KernelInfo>> {
     let uname_info = uname::uname()?;
     let info = KernelInfo {
         release: uname_info.release,
     };
 
-    Ok(info)
+    Ok(Some(info))
+}
+
+// default implementation
+#[cfg(not(unix))]
+fn collect_kernel() -> io::Result<Option<KernelInfo>> {
+    Ok(None)
 }

@@ -12,7 +12,7 @@ impl Publisher {
         Ok(Publisher {})
     }
 
-    pub fn publish_static(&self, _os_info: &os_info::Info, _kernel_info: &KernelInfo,
+    pub fn publish_static(&self, os_info: &os_info::Info, _kernel_info: &Option<KernelInfo>,
                           _mem_total_kb: Option<usize>,
     ) -> io::Result<()> {
         Ok(())
