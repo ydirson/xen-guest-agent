@@ -35,9 +35,41 @@ Some features to consider (from `xe-guest-utilities`):
 * "PV drivers version"
 * If ballooning is enabled
 
-### Rust prototype
+## Rust prototype
 
-Current state, limitations:
+### How to build
+
+Make sure you have a Rust toolchain available.  The base command is simply:
+
+```
+cargo build
+```
+
+By default it will (attempt to) build a `netlink` network collector
+(which is only known to work on Linux, and should work on FreeBSD 13.2
+and later), and a `xenstore` data publisher.  If you want to build
+without any of those add the `--no-default-features` flag; activating
+some of the features only requires starting similarly with no feature,
+and adding those you want with `-F`.
+
+For example to test the alternate xenstore data layout, you can use:
+
+```
+cargo build --no-default-features -F netlink,xenstore-rfc
+```
+
+
+If you have `libxenstore` installed in a non-standard place (this
+includes `/usr/local` on FreeBSD), set the following environment
+variables when running `cargo`:
+
+```
+BINDGEN_EXTRA_CLANG_ARGS=-I/usr/local/include
+RUSTFLAGS=-L/usr/local/lib
+```
+
+
+### Current state, limitations
 
 * we decided to play with Rust [for various
   reasons](https://xcp-ng.org/blog/2023/03/17/bringing-rust-to-the-xen-project/)
