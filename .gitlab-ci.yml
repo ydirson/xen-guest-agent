@@ -27,7 +27,7 @@ build-linux-xenstorerfc:
   extends:
     - .debian-build-template
   variables:
-    FEATURES: "--no-default-features -F netlink,xenstore-rfc"
+    FEATURES: "-F xenstore-rfc"
 
 build-linux-nofeat:
   extends:
@@ -40,12 +40,6 @@ build-linux-only-xenstore:
     - .debian-build-template
   variables:
     FEATURES: "--no-default-features -F xenstore"
-
-build-linux-only-xenstorerfc:
-  extends:
-    - .debian-build-template
-  variables:
-    FEATURES: "--no-default-features -F xenstore-rfc"
 
 build-linux-only-netlink:
   extends:

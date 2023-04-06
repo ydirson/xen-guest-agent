@@ -47,15 +47,28 @@ cargo build
 
 By default it will (attempt to) build a `netlink` network collector
 (which is only known to work on Linux, and should work on FreeBSD 13.2
-and later), and a `xenstore` data publisher.  If you want to build
-without any of those add the `--no-default-features` flag; activating
-some of the features only requires starting similarly with no feature,
-and adding those you want with `-F`.
+and later), and a `xenstore` data publisher.  Today the only
+alternative to the `netlink` network collector is a "no-op" one, and
+similarly the only alternative to the `xenstore` data publisher is a
+"mostly-no-op" one publishing to stdout.
 
-For example to test the alternate xenstore data layout, you can use:
+Building with the `--no-default-features` flag with select those
+"no-op" implementations instead.  Selecting only one "no-op"
+implementation requires starting similarly with no feature, and adding
+those you want with `-F`.
+
+For example to test the xenstore publisher without netlink support,
+you can use:
 
 ```
-cargo build --no-default-features -F netlink,xenstore-rfc
+cargo build --no-default-features -F xenstore
+```
+
+The alternate xenstore data layout can be activated with the
+`xenstore-rfc` feature, e.g. with:
+
+```
+cargo build -F xenstore-rfc
 ```
 
 

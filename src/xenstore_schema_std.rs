@@ -1,13 +1,12 @@
 use crate::datastructs::{KernelInfo, NetEvent, NetEventOp, NetInterface};
+use crate::publisher::{XenstoreSchema, xs_publish, xs_unpublish};
 use std::collections::HashMap;
-use std::error::Error;
 use std::io;
 use std::net::IpAddr;
-use xenstore_rs::{Xs, XsOpenFlags, XBTransaction};
+use xenstore_rs::Xs;
 
-pub struct Publisher {
+pub struct Schema {
     xs: Xs,
-
     // use of integer indices for IP addresses requires to keep a mapping
     ip_addresses: IpList,
 }
@@ -26,15 +25,14 @@ const AGENT_VERSION_MINOR: &str = "0";
 const AGENT_VERSION_MICRO: &str = "0"; // XAPI exposes "-1" if missing
 const AGENT_VERSION_BUILD: &str = "proto"; // only place where we can be clear :)
 
-impl Publisher {
-    pub fn new() -> Result<Publisher, Box<dyn Error>> {
-        let xs = Xs::new(XsOpenFlags::ReadOnly)?;
+impl XenstoreSchema for Schema {
+    fn new(xs: Xs) -> Self where Self: Sized {
         let ip_addresses = IpList::new();
-        Ok(Publisher { xs, ip_addresses })
+        Schema { xs, ip_addresses }
     }
 
-    pub fn publish_static(&self, os_info: &os_info::Info, kernel_info: &Option<KernelInfo>,
-                          mem_total_kb: Option<usize>,
+    fn publish_static(&self, os_info: &os_info::Info, kernel_info: &Option<KernelInfo>,
+                      mem_total_kb: Option<usize>,
     ) -> io::Result<()> {
         // FIXME this is not anywhere standard, just minimal XS compatibility
         xs_publish(&self.xs, "attr/PVAddons/MajorVersion", AGENT_VERSION_MAJOR)?;
@@ -66,13 +64,13 @@ impl Publisher {
         Ok(())
     }
 
-    pub fn publish_memfree(&self, mem_free_kb: usize) -> io::Result<()> {
+    fn publish_memfree(&self, mem_free_kb: usize) -> io::Result<()> {
         xs_publish(&self.xs, "data/meminfo_free", &mem_free_kb.to_string())?;
         Ok(())
     }
 
     // see https://xenbits.xen.org/docs/unstable/misc/xenstore-paths.html#domain-controlled-paths
-    pub fn publish_netevent(&mut self, event: &NetEvent) -> io::Result<()> {
+    fn publish_netevent(&mut self, event: &NetEvent) -> io::Result<()> {
         let iface_id = match event.iface.vif_index {
             Some(id) => id,
             None => return Ok(()),
@@ -95,8 +93,9 @@ impl Publisher {
         }
         Ok(())
     }
+}
 
-
+impl Schema {
     fn munged_address(&mut self, addr: &IpAddr, iface: &NetInterface) -> io::Result<String> {
         let ip_entry = self.ip_addresses
             .entry(iface.name.clone()) // wtf, need cloning string for a lookup!?
@@ -109,16 +108,6 @@ impl Publisher {
             IpAddr::V6(_) => Ok(format!("ipv6/{ip_slot}")),
         }
     }
-}
-
-fn xs_publish(xs: &Xs, key: &str, value: &str) -> io::Result<()> {
-    println!("W: {}={:?}", key, value);
-    xs.write(XBTransaction::Null, key, value)
-}
-
-fn xs_unpublish(xs: &Xs, key: &str) -> io::Result<()> {
-    println!("D: {}", key);
-    xs.rm(XBTransaction::Null, key)
 }
 
 fn get_ip_slot(ip: &IpAddr, list: &mut IfaceIpList) -> io::Result<usize> {
