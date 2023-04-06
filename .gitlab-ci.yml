@@ -1,0 +1,54 @@
+stages:
+  - build
+
+variables:
+  LINUX_RUSTIMG: "rust:latest"
+
+.build-template:
+  stage: build
+  script:
+    - cargo build ${FEATURES}
+
+.debian-build-template:
+  extends:
+    - .build-template
+  image: ${LINUX_RUSTIMG}
+  before_script:
+    - apt-get update
+    - apt-get install -y llvm-dev libclang-dev libxen-dev
+
+build-linux-default:
+  extends:
+    - .debian-build-template
+  variables:
+    FEATURES: ""
+
+build-linux-xenstorerfc:
+  extends:
+    - .debian-build-template
+  variables:
+    FEATURES: "--no-default-features -F netlink,xenstore-rfc"
+
+build-linux-nofeat:
+  extends:
+    - .debian-build-template
+  variables:
+    FEATURES: "--no-default-features"
+
+build-linux-only-xenstore:
+  extends:
+    - .debian-build-template
+  variables:
+    FEATURES: "--no-default-features -F xenstore"
+
+build-linux-only-xenstorerfc:
+  extends:
+    - .debian-build-template
+  variables:
+    FEATURES: "--no-default-features -F xenstore-rfc"
+
+build-linux-only-netlink:
+  extends:
+    - .debian-build-template
+  variables:
+    FEATURES: "--no-default-features -F netlink"
