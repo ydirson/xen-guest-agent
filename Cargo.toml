@@ -26,8 +26,5 @@ xenstore = ["dep:xenstore-rs"]
 netlink = ["dep:netlink-proto", "dep:netlink-packet-core", "dep:netlink-packet-route",
            "dep:rtnetlink"]
 
-# alternate xenstore layout
-xenstore-rfc = ["xenstore"]
-
 [patch.crates-io]
 xenstore-rs = { git = "https://github.com/xcp-ng/xenstore-rs.git", branch = "xs_write" }

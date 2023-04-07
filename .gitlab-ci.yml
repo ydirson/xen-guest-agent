@@ -23,12 +23,6 @@ build-linux-default:
   variables:
     FEATURES: ""
 
-build-linux-xenstorerfc:
-  extends:
-    - .debian-build-template
-  variables:
-    FEATURES: "-F xenstore-rfc"
-
 build-linux-nofeat:
   extends:
     - .debian-build-template

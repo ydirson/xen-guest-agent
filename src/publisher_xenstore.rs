@@ -1,18 +1,12 @@
 use crate::datastructs::{KernelInfo, NetEvent};
+use std::env;
 use std::error::Error;
 use std::io;
 use xenstore_rs::{Xs, XsOpenFlags, XBTransaction};
 
-// FIXME: this keeps the choice at compile-time
-#[cfg(not(feature = "xenstore-rfc"))]
-use crate::xenstore_schema_std::Schema;
-#[cfg(feature = "xenstore-rfc")]
-use crate::xenstore_schema_rfc::Schema;
-
 pub trait XenstoreSchema {
-    fn new(xs: Xs) -> Self where Self: Sized;
     fn publish_static(&self, os_info: &os_info::Info, kernel_info: &Option<KernelInfo>,
-                          mem_total_kb: Option<usize>,
+                      mem_total_kb: Option<usize>,
     ) -> io::Result<()>;
     fn publish_memfree(&self, mem_free_kb: usize) -> io::Result<()>;
     fn publish_netevent(&mut self, event: &NetEvent) -> io::Result<()>;
@@ -25,7 +19,9 @@ pub struct Publisher {
 impl Publisher {
     pub fn new() -> Result<Publisher, Box<dyn Error>> {
         let xs = Xs::new(XsOpenFlags::ReadOnly)?;
-        let schema = Box::new(Schema::new(xs));
+        let schema_name = env::var("XENSTORE_SCHEMA").unwrap_or("std".to_string());
+        let schema_ctor = schema_from_name(&schema_name)?;
+        let schema = schema_ctor(xs);
         Ok(Publisher { schema })
     }
 
@@ -39,6 +35,15 @@ impl Publisher {
     }
     pub fn publish_netevent(&mut self, event: &NetEvent) -> io::Result<()> {
         self.schema.publish_netevent(event)
+    }
+}
+
+fn schema_from_name(name: &str) -> io::Result<&'static dyn Fn(Xs) -> Box<dyn XenstoreSchema>> {
+    match name {
+        "std" => Ok(&crate::xenstore_schema_std::Schema::new),
+        "rfc" => Ok(&crate::xenstore_schema_rfc::Schema::new),
+        _ => Err(io::Error::new(io::ErrorKind::InvalidData,
+                                format!("unknown schema '{name}'"))),
     }
 }
 

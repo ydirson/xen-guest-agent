@@ -25,12 +25,14 @@ const AGENT_VERSION_MINOR: &str = "0";
 const AGENT_VERSION_MICRO: &str = "0"; // XAPI exposes "-1" if missing
 const AGENT_VERSION_BUILD: &str = "proto"; // only place where we can be clear :)
 
-impl XenstoreSchema for Schema {
-    fn new(xs: Xs) -> Self where Self: Sized {
+impl Schema {
+    pub fn new(xs: Xs) -> Box<dyn XenstoreSchema> {
         let ip_addresses = IpList::new();
-        Schema { xs, ip_addresses }
+        Box::new(Schema { xs, ip_addresses })
     }
+}
 
+impl XenstoreSchema for Schema {
     fn publish_static(&self, os_info: &os_info::Info, kernel_info: &Option<KernelInfo>,
                       mem_total_kb: Option<usize>,
     ) -> io::Result<()> {

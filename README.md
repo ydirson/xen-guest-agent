@@ -64,14 +64,6 @@ you can use:
 cargo build --no-default-features -F xenstore
 ```
 
-The alternate xenstore data layout can be activated with the
-`xenstore-rfc` feature, e.g. with:
-
-```
-cargo build -F xenstore-rfc
-```
-
-
 If you have `libxenstore` installed in a non-standard place (this
 includes `/usr/local` on FreeBSD), set the following environment
 variables when running `cargo`:
@@ -81,6 +73,17 @@ BINDGEN_EXTRA_CLANG_ARGS=-I/usr/local/include
 RUSTFLAGS=-L/usr/local/lib
 ```
 
+### How to run
+
+The only way to tune the behavior currently is by using environment
+variables:
+
+* `XENSTORE_SCHEMA`: select the schema to use for publishing of data in Xenstore.
+  Possible values:
+  * `std`: (default value) network info according to [the xenstore-path
+    doc](https://xenbits.xen.org/docs/unstable/misc/xenstore-paths.html#domain-controlled-paths),
+    the rest compatible with what XAPI currently expects
+  * `rfc`: alternate layout as proposed in [a separate document](doc/structure.md)
 
 ### Current state, limitations
 
@@ -91,12 +94,12 @@ RUSTFLAGS=-L/usr/local/lib
   experimentation purposes to get a grasp on Rust's take on the
   subject
 * it is written around the idea of various information collectors
-  (today: OS, kernel, network, memory) and publishers (today: XenStore
-  with compatibility for today's Xenserver tool aka "xenstore-std",
-  XenStore with an alternative structure aka "xenstore-rfc"), with
-  additional helpers (identification of whether a NIC is a VIF, with a
-  rough /sys-based implementation for Linux, and a rough untested
-  implementation for FreeBSD based on interface name)
+  (today: OS, kernel, network, memory) and publishers (today:
+  XenStore, with compatibility for today's Xenserver tool or with an
+  alternative "rfc" structure), with additional helpers
+  (identification of whether a NIC is a VIF, with a rough /sys-based
+  implementation for Linux, and a rough untested implementation for
+  FreeBSD based on interface name)
 * access to Xenstore is done using Mathieu Tarral's early-stage work
   on [Rust Xenstore bindings](https://lib.rs/crates/xenstore-rs),
   which we [enhanced with write
@@ -105,10 +108,10 @@ RUSTFLAGS=-L/usr/local/lib
   would be Starlab's [pure-Rust libxenstore
   implementation](https://github.com/starlab-io/xenstore-rs), which is
   also in a prototype state
-* the "xenstore-std" publisher exposes only information currently
-  identified as used by the XAPI/XenOrchestra stack (notably MAC
-  addresses for VIFs are not exposed yet, even though they appear in
-  [the xenstore-path
+* the Xenstore publisher's "std" schema exposes only information
+  currently identified as used by the XAPI/XenOrchestra stack (notably
+  MAC addresses for VIFs are not exposed yet, even though they appear
+  in [the xenstore-path
   doc](https://xenbits.xen.org/docs/unstable/misc/xenstore-paths.html#domain-controlled-paths))
 * the Linux VIF-identification implementation is simplistic, skipped
   the SR-IOV case

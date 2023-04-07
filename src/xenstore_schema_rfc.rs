@@ -12,11 +12,13 @@ const PROTOCOL_VERSION: &str = "0.1.0";
 
 // FIXME: this should be a runtime config of xenstore-std.rs
 
-impl XenstoreSchema for Schema {
-    fn new(xs: Xs) -> Self where Self: Sized {
-        Schema { xs }
+impl Schema {
+    pub fn new(xs: Xs) -> Box<dyn XenstoreSchema> {
+        Box::new(Schema { xs })
     }
+}
 
+impl XenstoreSchema for Schema {
     fn publish_static(&self, os_info: &os_info::Info, kernel_info: &Option<KernelInfo>,
                       _mem_total_kb: Option<usize>,
     ) -> io::Result<()> {
