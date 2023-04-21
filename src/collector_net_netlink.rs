@@ -63,15 +63,11 @@ impl NetworkSource {
         // Send the request
         let mut nl_response = self.handle.request(nl_msg, SocketAddr::new(0, 0))?;
         // Handle response
-        loop {
-            if let Some(packet) = nl_response.next().await {
-                if let NetlinkMessage{payload: NetlinkPayload::InnerMessage(msg), ..} = packet {
-                    events.push(netevent_from_rtnetlink(&msg)?);
-                }
-                //println!("<<< {:?}", packet);
-            } else {
-                break;
+        while let Some(packet) = nl_response.next().await {
+            if let NetlinkMessage{payload: NetlinkPayload::InnerMessage(msg), ..} = packet {
+                events.push(netevent_from_rtnetlink(&msg)?);
             }
+            //println!("<<< {:?}", packet);
         }
 
         // Create the netlink message that requests the addresses to be dumped
@@ -84,15 +80,11 @@ impl NetworkSource {
         // Send the request
         let mut nl_response = self.handle.request(nl_msg, SocketAddr::new(0, 0))?;
         // Handle response
-        loop {
-            if let Some(packet) = nl_response.next().await {
-                if let NetlinkMessage{payload: NetlinkPayload::InnerMessage(msg), ..} = packet {
-                    events.push(netevent_from_rtnetlink(&msg)?);
-                }
-                //println!("<<< {:?}", packet);
-            } else {
-                break;
+        while let Some(packet) = nl_response.next().await {
+            if let NetlinkMessage{payload: NetlinkPayload::InnerMessage(msg), ..} = packet {
+                events.push(netevent_from_rtnetlink(&msg)?);
             }
+            //println!("<<< {:?}", packet);
         }
 
         Ok(events)
