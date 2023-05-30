@@ -19,7 +19,7 @@ impl Schema {
 }
 
 impl XenstoreSchema for Schema {
-    fn publish_static(&self, os_info: &os_info::Info, kernel_info: &Option<KernelInfo>,
+    fn publish_static(&mut self, os_info: &os_info::Info, kernel_info: &Option<KernelInfo>,
                       _mem_total_kb: Option<usize>,
     ) -> io::Result<()> {
         xs_publish(&self.xs, "data/xen-guest-agent", PROTOCOL_VERSION)?;

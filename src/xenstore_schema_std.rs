@@ -9,6 +9,12 @@ pub struct Schema {
     xs: Xs,
     // use of integer indices for IP addresses requires to keep a mapping
     ip_addresses: IpList,
+
+    // control/feature-balloon is a control node of XAPI's squeezed,
+    // and gets created by the guest because xenopsd sets ~/control/
+    // with domain ownership.  OTOH libxl creates it readonly, so we
+    // catch the case where it is so to avoid uselessly retrying.
+    forbidden_control_feature_balloon: bool,
 }
 
 const NUM_IFACE_IPS: usize = 10;
@@ -28,12 +34,13 @@ const AGENT_VERSION_BUILD: &str = "proto"; // only place where we can be clear :
 impl Schema {
     pub fn new(xs: Xs) -> Box<dyn XenstoreSchema> {
         let ip_addresses = IpList::new();
-        Box::new(Schema { xs, ip_addresses })
+        Box::new(Schema { xs, ip_addresses,
+                          forbidden_control_feature_balloon: false})
     }
 }
 
 impl XenstoreSchema for Schema {
-    fn publish_static(&self, os_info: &os_info::Info, kernel_info: &Option<KernelInfo>,
+    fn publish_static(&mut self, os_info: &os_info::Info, kernel_info: &Option<KernelInfo>,
                       mem_total_kb: Option<usize>,
     ) -> io::Result<()> {
         // FIXME this is not anywhere standard, just minimal XS compatibility
@@ -61,6 +68,23 @@ impl XenstoreSchema for Schema {
 
         if let Some(mem_total_kb) = mem_total_kb {
             xs_publish(&self.xs, "data/meminfo_total", &mem_total_kb.to_string())?;
+        }
+
+        if ! self.forbidden_control_feature_balloon {
+            // we may want to be more clever some day, e.g. by
+            // checking if the guest indeed has ballooning, and if the
+            // balloon driver has reached the requested initial
+            // `~/memory/target` value (or, possibly, to rely on the
+            // balloon driver to do the job of signaling this
+            // condition)
+            match xs_publish(&self.xs, "control/feature-balloon", "1") {
+                Err(e) if e.kind() == std::io::ErrorKind::PermissionDenied => {
+                    println!("NOTE: cannot write control/feature-balloon (impacts XAPI's squeezed)");
+                    self.forbidden_control_feature_balloon = true;
+                },
+                Ok(_) => (),
+                e => return e,
+            }
         }
 
         Ok(())

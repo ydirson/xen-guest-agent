@@ -29,11 +29,11 @@ Current features:
 * Network metrics (vif ID, MAC, v4/v6 address)
 * OS reporting
 * Memory metrics (total, free)
+* Support for squeezed ballooning controller on toolstack size
 
 Some features to consider (from `xe-guest-utilities`):
 * Disk metrics
 * "PV drivers version"
-* If ballooning is enabled
 
 ## Rust prototype
 

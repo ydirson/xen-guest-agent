@@ -5,7 +5,7 @@ use std::io;
 use xenstore_rs::{Xs, XsOpenFlags, XBTransaction};
 
 pub trait XenstoreSchema {
-    fn publish_static(&self, os_info: &os_info::Info, kernel_info: &Option<KernelInfo>,
+    fn publish_static(&mut self, os_info: &os_info::Info, kernel_info: &Option<KernelInfo>,
                       mem_total_kb: Option<usize>,
     ) -> io::Result<()>;
     fn publish_memfree(&self, mem_free_kb: usize) -> io::Result<()>;
@@ -25,7 +25,7 @@ impl Publisher {
         Ok(Publisher { schema })
     }
 
-    pub fn publish_static(&self, os_info: &os_info::Info, kernel_info: &Option<KernelInfo>,
+    pub fn publish_static(&mut self, os_info: &os_info::Info, kernel_info: &Option<KernelInfo>,
                           mem_total_kb: Option<usize>,
     ) -> io::Result<()> {
         self.schema.publish_static(os_info, kernel_info, mem_total_kb)
