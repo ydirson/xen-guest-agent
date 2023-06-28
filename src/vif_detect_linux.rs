@@ -1,4 +1,4 @@
-use crate::datastructs::NetEvent;
+use crate::datastructs::{NetEvent, ToolstackNetInterface};
 use std::fs;
 
 // identifies a VIF from sysfs as devtype="vif", and take the VIF id
@@ -16,7 +16,8 @@ pub fn add_vif_info(event: &mut NetEvent) {
             let nodename = nodename.trim();
             const PREFIX: &str = "device/vif/";
             if ! nodename.starts_with(PREFIX) { return; } // FIXME warn?
-            event.iface.vif_index = Some(nodename[PREFIX.len()..].parse().unwrap());
+            let vif_id = nodename[PREFIX.len()..].parse().unwrap();
+            event.iface.toolstack_iface = ToolstackNetInterface::VIF(vif_id);
         }
     }
 }

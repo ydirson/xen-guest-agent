@@ -28,7 +28,7 @@ use std::error::Error;
 use std::io;
 use std::time::Duration;
 
-const ONLY_VIF: bool = true;    // FIXME make this a CLI flag
+const REPORT_INTERNAL_NICS: bool = false; // FIXME make this a CLI flag
 const MEM_PERIOD_SECONDS: u64 = 60;
 
 #[tokio::main]
@@ -54,7 +54,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let mut collector_net = NetworkSource::new()?;
     for mut event in collector_net.collect_current().await? {
         vif_detect::add_vif_info(&mut event);
-        if ! (ONLY_VIF && event.iface.vif_index.is_none()) {
+        if REPORT_INTERNAL_NICS || ! event.iface.toolstack_iface.is_none() {
             publisher.publish_netevent(&event)?;
         }
     }
@@ -68,7 +68,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 match event? {
                     Some(mut event) => {
                         vif_detect::add_vif_info(&mut event);
-                        if ! (ONLY_VIF && event.iface.vif_index.is_none()) {
+                        if REPORT_INTERNAL_NICS || ! event.iface.toolstack_iface.is_none() {
                             publisher.publish_netevent(&event)?;
                         }
                     },

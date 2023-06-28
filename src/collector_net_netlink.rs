@@ -1,5 +1,5 @@
 use async_stream::try_stream;
-use crate::datastructs::{NetEvent, NetEventOp, NetInterface};
+use crate::datastructs::{NetEvent, NetEventOp, NetInterface, ToolstackNetInterface};
 use crate::unix_helpers::interface_name;
 use futures::channel::mpsc::UnboundedReceiver;
 use futures::stream::{Stream, StreamExt};
@@ -147,7 +147,7 @@ fn nl_linkmessage_decode(msg: &LinkMessage) -> io::Result<(NetInterface, String)
 
     let iface = NetInterface { index: header.index,
                                name: interface_name(header.index),
-                               vif_index: None,
+                               toolstack_iface: ToolstackNetInterface::None,
     };
 
     match mac_address {
@@ -193,7 +193,7 @@ fn nl_addressmessage_decode(msg: &AddressMessage) -> io::Result<(NetInterface, I
 
     let iface = NetInterface { index: header.index,
                                name: interface_name(header.index),
-                               vif_index: None,
+                               toolstack_iface: ToolstackNetInterface::None,
     };
 
     match address {

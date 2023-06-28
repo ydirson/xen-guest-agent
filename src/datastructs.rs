@@ -4,10 +4,28 @@ pub struct KernelInfo {
     pub release: String,
 }
 
+#[non_exhaustive]
+pub enum ToolstackNetInterface {
+    None,
+    VIF(u32),
+    // SRIOV,
+    // PciPassthrough,
+    // UsbPassthrough,
+}
+
+impl ToolstackNetInterface {
+    pub fn is_none(&self) -> bool {
+        if let ToolstackNetInterface::None = self {
+            return true;
+        }
+        return false;
+    }
+}
+
 pub struct NetInterface {
     pub index: u32,
     pub name: String,
-    pub vif_index: Option<u32>, // on Xen PV device only
+    pub toolstack_iface: ToolstackNetInterface,
 }
 
 pub enum NetEventOp {

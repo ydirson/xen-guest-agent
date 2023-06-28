@@ -1,4 +1,4 @@
-use crate::datastructs::{KernelInfo, NetEvent, NetEventOp, NetInterface};
+use crate::datastructs::{KernelInfo, NetEvent, NetEventOp, NetInterface, ToolstackNetInterface};
 use crate::publisher::{XenstoreSchema, xs_publish, xs_unpublish};
 use std::collections::HashMap;
 use std::io;
@@ -97,9 +97,9 @@ impl XenstoreSchema for Schema {
 
     // see https://xenbits.xen.org/docs/unstable/misc/xenstore-paths.html#domain-controlled-paths
     fn publish_netevent(&mut self, event: &NetEvent) -> io::Result<()> {
-        let iface_id = match event.iface.vif_index {
-            Some(id) => id,
-            None => return Ok(()),
+        let iface_id = match event.iface.toolstack_iface {
+            ToolstackNetInterface::VIF(id) => id,
+            ToolstackNetInterface::None => return Ok(()),
         };
         let xs_iface_prefix = format!("attr/vif/{iface_id}");
         match &event.op {
