@@ -9,6 +9,7 @@ Goals are:
 * being community driven
 * splitting clearly the agent from libs (xenstore-read/write…)
 * reducing the burden to package it for distro's
+* being portable (Linux, BSD, eventually Windows and others)
 
 ## General design
 
@@ -45,24 +46,41 @@ Make sure you have a Rust toolchain available.  The base command is simply:
 cargo build
 ```
 
+Proper feature selection is made difficult by [cargo not yet allowing
+to declare features as conflicting
+alternatives](https://github.com/rust-lang/cargo/issues/2980), and its
+inability to declare default features depending on the target OS or OS
+version.
+
 By default it will (attempt to) build a `netlink` network collector
-(which is only known to work on Linux, and should work on FreeBSD 13.2
-and later), and a `xenstore` data publisher.  Today the only
-alternative to the `netlink` network collector is a "no-op" one, and
-similarly the only alternative to the `xenstore` data publisher is a
-"mostly-no-op" one publishing to stdout.
+(which is only known to work on Linux, and will work on FreeBSD 13.2
+and later once dependencies get the necessqry support), and a
+`xenstore` data publisher.  Today the alternatives to the
+`net_netlink` network collector are a "no-op" one (not collecting
+anything), and a `net_pnet` one (periodically scanning the guest
+interfaces using the portable `pnet` crate).  Similarly the only
+alternative to the `xenstore` data publisher is a "mostly-no-op" one
+publishing to stdout.
 
 Building with the `--no-default-features` flag with select those
 "no-op" implementations instead.  Selecting only one "no-op"
-implementation requires starting similarly with no feature, and adding
-those you want with `-F`.
+implementation, or selecting an alternative feature like `net_pnet`
+requires starting similarly with no feature, and adding those you want
+with `-F`.
 
-For example to test the xenstore publisher without netlink support,
+For example to test the xenstore publisher without network support,
 you can use:
 
 ```
 cargo build --no-default-features -F xenstore
 ```
+
+and for a Unix-like guest OS without netlink support:
+
+```
+cargo build --no-default-features -F xenstore,net_pnet
+```
+
 
 If you have `libxenstore` installed in a non-standard place (this
 includes `/usr/local` on FreeBSD), set the following environment
@@ -125,9 +143,6 @@ variables:
   collectors and publishers are selectable at compile-time, though a
   number of those choices will make sense as runtime options
 * similarly, some behaviours are tunable by modifying flags in the code
-* a single implementation for network-configuration info listening to
-  netlink events is provided, with as alternative a no-op collector
-  for un-/not-yet- supported OS
 * error handling is typical of a proto (but Rust will make fixing this
   unexpectedly easy, having forced the use of well-identified
   constructs like `.unwrap()` and `?` right from this early stage)
