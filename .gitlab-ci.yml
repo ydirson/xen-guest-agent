@@ -39,4 +39,4 @@ build-linux-only-netlink:
   extends:
     - .debian-build-template
   variables:
-    FEATURES: "--no-default-features -F netlink"
+    FEATURES: "--no-default-features -F net_netlink"

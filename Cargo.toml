@@ -21,10 +21,10 @@ os_info = { version = "3", default-features = false }
 uname = "0.1.1"
 
 [features]
-default = ["xenstore", "netlink"]
+default = ["xenstore", "net_netlink"]
 xenstore = ["dep:xenstore-rs"]
-netlink = ["dep:netlink-proto", "dep:netlink-packet-core", "dep:netlink-packet-route",
-           "dep:rtnetlink"]
+net_netlink = ["dep:netlink-proto", "dep:netlink-packet-core", "dep:netlink-packet-route",
+               "dep:rtnetlink"]
 
 [profile.release]
 lto = true
