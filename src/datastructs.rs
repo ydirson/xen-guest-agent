@@ -5,6 +5,7 @@ pub struct KernelInfo {
 }
 
 #[non_exhaustive]
+#[derive(Clone)]
 pub enum ToolstackNetInterface {
     None,
     VIF(u32),
@@ -22,6 +23,7 @@ impl ToolstackNetInterface {
     }
 }
 
+#[derive(Clone)]
 pub struct NetInterface {
     pub index: u32,
     pub name: String,

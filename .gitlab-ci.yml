@@ -40,3 +40,9 @@ build-linux-only-netlink:
     - .debian-build-template
   variables:
     FEATURES: "--no-default-features -F net_netlink"
+
+build-linux-only-pnet:
+  extends:
+    - .debian-build-template
+  variables:
+    FEATURES: "--no-default-features -F net_pnet"

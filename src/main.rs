@@ -10,6 +10,7 @@ mod xenstore_schema_std;
 mod xenstore_schema_rfc;
 
 #[cfg_attr(feature = "net_netlink", path = "collector_net_netlink.rs")]
+#[cfg_attr(feature = "net_pnet", path = "collector_net_pnet.rs")]
 mod collector_net;
 
 #[cfg_attr(target_os = "linux", path = "collector_memory_linux.rs")]
