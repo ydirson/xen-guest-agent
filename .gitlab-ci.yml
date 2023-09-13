@@ -17,32 +17,106 @@ variables:
     - apt-get update
     - apt-get install -y llvm-dev libclang-dev libxen-dev
 
-build-linux-default:
+.scheduled:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+
+.not-scheduled:
+  rules:
+    - if: $CI_PIPELINE_SOURCE != "schedule"
+
+## common defs
+
+.build-linux-default:
   extends:
     - .debian-build-template
   variables:
     FEATURES: ""
 
-build-linux-nofeat:
+.build-linux-nofeat:
   extends:
     - .debian-build-template
   variables:
     FEATURES: "--no-default-features"
 
-build-linux-only-xenstore:
+.build-linux-only-xenstore:
   extends:
     - .debian-build-template
   variables:
     FEATURES: "--no-default-features -F xenstore"
 
-build-linux-only-netlink:
+.build-linux-only-netlink:
   extends:
     - .debian-build-template
   variables:
     FEATURES: "--no-default-features -F net_netlink"
 
-build-linux-only-pnet:
+.build-linux-only-pnet:
   extends:
     - .debian-build-template
   variables:
     FEATURES: "--no-default-features -F net_pnet"
+
+## standard jobs building with shipped Cargo.lock
+
+build-linux-default:
+  extends:
+    - .build-linux-default
+    - .not-scheduled
+
+build-linux-nofeat:
+  extends:
+    - .build-linux-nofeat
+    - .not-scheduled
+
+build-linux-only-xenstore:
+  extends:
+    - .build-linux-only-xenstore
+    - .not-scheduled
+
+build-linux-only-netlink:
+  extends:
+    - .build-linux-only-netlink
+    - .not-scheduled
+
+build-linux-only-pnet:
+  extends:
+    - .build-linux-only-pnet
+    - .not-scheduled
+
+## continuous checking against most recent dependencies
+
+.latest-scheduled:
+  extends:
+    - .scheduled
+  before_script:
+    - !reference [".debian-build-template", "before_script"]
+    - mv Cargo.lock Cargo.lock.current
+  after_script:
+    # show which dependencies changed in Cargo.lock
+    - git diff
+
+build-latest-linux-default:
+  extends:
+    - .build-linux-default
+    - .latest-scheduled
+
+build-latest-linux-nofeat:
+  extends:
+    - .build-linux-nofeat
+    - .latest-scheduled
+
+build-latest-linux-only-xenstore:
+  extends:
+    - .build-linux-only-xenstore
+    - .latest-scheduled
+
+build-latest-linux-only-netlink:
+  extends:
+    - .build-linux-only-netlink
+    - .latest-scheduled
+
+build-latest-linux-only-pnet:
+  extends:
+    - .build-linux-only-pnet
+    - .latest-scheduled
