@@ -55,12 +55,16 @@ impl XenstoreSchema for Schema {
         // FIXME .version only has "major" component right now; not a
         // big deal for a proto, os_minorver is known to be unreliable
         // in xe-guest-utilities at least for Debian
-        match os_info.version() {
+        let os_version = os_info.version();
+        match os_version {
             os_info::Version::Semantic(major, minor, _patch) => {
                 xs_publish(&self.xs, "data/os_majorver", &major.to_string())?;
                 xs_publish(&self.xs, "data/os_minorver", &minor.to_string())?;
             },
-            _ => (),            // FIXME what to do with strings?
+            _ => {
+                // FIXME what to do with strings?
+                println!("cannot parse yet os version {}", os_version);
+            }
         }
         if let Some(kernel_info) = kernel_info {
             xs_publish(&self.xs, "data/os_uname", &kernel_info.release)?;
