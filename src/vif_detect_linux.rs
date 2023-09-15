@@ -17,7 +17,7 @@ pub fn add_vif_info(event: &mut NetEvent) {
             const PREFIX: &str = "device/vif/";
             if ! nodename.starts_with(PREFIX) { return; } // FIXME warn?
             let vif_id = nodename[PREFIX.len()..].parse().unwrap();
-            event.iface.toolstack_iface = ToolstackNetInterface::VIF(vif_id);
+            event.iface.toolstack_iface = ToolstackNetInterface::Vif(vif_id);
         }
     }
 }

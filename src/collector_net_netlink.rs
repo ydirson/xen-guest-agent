@@ -163,9 +163,9 @@ fn nl_addressmessage_decode(msg: &AddressMessage) -> io::Result<(NetInterface, I
     // extract fields of interest
     let mut address_bytes: Option<&Vec<u8>> = None;
     for nla in nlas {
-        match nla {
-            address::nlas::Nla::Address(addr) => address_bytes = Some(addr),
-            _ => (),
+        if let address::nlas::Nla::Address(addr) = nla {
+            address_bytes = Some(addr);
+            break;
         }
     }
 

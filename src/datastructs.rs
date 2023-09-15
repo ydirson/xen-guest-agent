@@ -8,7 +8,7 @@ pub struct KernelInfo {
 #[derive(Clone)]
 pub enum ToolstackNetInterface {
     None,
-    VIF(u32),
+    Vif(u32),
     // SRIOV,
     // PciPassthrough,
     // UsbPassthrough,
@@ -19,7 +19,7 @@ impl ToolstackNetInterface {
         if let ToolstackNetInterface::None = self {
             return true;
         }
-        return false;
+        false
     }
 }
 
