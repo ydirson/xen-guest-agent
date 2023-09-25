@@ -1018,7 +1018,7 @@ dependencies = [
 [[package]]
 name = "xenstore-rs"
 version = "0.3.2"
-source = "git+https://github.com/xcp-ng/xenstore-rs.git?branch=xs_write#5c200a1809edf607a016698fdf543c09f791228b"
+source = "git+https://github.com/Wenzel/xenstore.git?branch=master#ba54e2f40cc5583fb95b0d824876b1f6c0a4c802"
 dependencies = [
  "enum-primitive-derive",
  "libc",

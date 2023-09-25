@@ -34,4 +34,4 @@ net_pnet = ["dep:pnet_datalink", "dep:pnet_base", "dep:ipnetwork"]
 lto = true
 
 [patch.crates-io]
-xenstore-rs = { git = "https://github.com/xcp-ng/xenstore-rs.git", branch = "xs_write" }
+xenstore-rs = { git = "https://github.com/Wenzel/xenstore.git", branch = "master" }
