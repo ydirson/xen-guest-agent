@@ -4,6 +4,7 @@ version = "0.1.0"
 authors = ["Yann Dirson <yann.dirson@vates.fr>"]
 edition = "2018"
 rust-version = "1.64"
+license = "AGPL-3.0-only"
 
 [dependencies]
 futures = "0.3.26"
