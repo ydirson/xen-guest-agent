@@ -1,0 +1,60 @@
+stages:
+  - build
+
+variables:
+  LINUX_RUSTIMG: "rust:latest"
+
+.build-template:
+  stage: build
+  script:
+    - cargo build ${FEATURES}
+
+.debian-build-template:
+  extends:
+    - .build-template
+  image: ${LINUX_RUSTIMG}
+  before_script:
+    - apt-get update
+    - apt-get install -y llvm-dev libclang-dev libxen-dev
+
+.scheduled:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+
+.not-scheduled:
+  rules:
+    - if: $CI_PIPELINE_SOURCE != "schedule"
+
+## common defs
+
+.featurematrix:
+  parallel:
+    matrix:
+      - FEATURES:
+          - ""
+          - "--no-default-features"
+          - "--no-default-features -F xenstore"
+          - "--no-default-features -F net_netlink"
+          - "--no-default-features -F net_pnet"
+
+## standard jobs building with shipped Cargo.lock
+
+build-linux:
+  parallel: !reference [.featurematrix,parallel]
+  extends:
+    - .debian-build-template
+    - .not-scheduled
+
+## continuous checking against most recent dependencies
+
+build-latest-linux:
+  parallel: !reference [.featurematrix,parallel]
+  extends:
+    - .debian-build-template
+    - .scheduled
+  before_script:
+    - !reference [".debian-build-template", "before_script"]
+    - mv Cargo.lock Cargo.lock.current
+  after_script:
+    # show which dependencies changed in Cargo.lock
+    - git diff
