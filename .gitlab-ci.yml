@@ -27,67 +27,30 @@ variables:
 
 ## common defs
 
-.build-linux-default:
-  extends:
-    - .debian-build-template
-  variables:
-    FEATURES: ""
-
-.build-linux-nofeat:
-  extends:
-    - .debian-build-template
-  variables:
-    FEATURES: "--no-default-features"
-
-.build-linux-only-xenstore:
-  extends:
-    - .debian-build-template
-  variables:
-    FEATURES: "--no-default-features -F xenstore"
-
-.build-linux-only-netlink:
-  extends:
-    - .debian-build-template
-  variables:
-    FEATURES: "--no-default-features -F net_netlink"
-
-.build-linux-only-pnet:
-  extends:
-    - .debian-build-template
-  variables:
-    FEATURES: "--no-default-features -F net_pnet"
+.featurematrix:
+  parallel:
+    matrix:
+      - FEATURES:
+          - ""
+          - "--no-default-features"
+          - "--no-default-features -F xenstore"
+          - "--no-default-features -F net_netlink"
+          - "--no-default-features -F net_pnet"
 
 ## standard jobs building with shipped Cargo.lock
 
-build-linux-default:
+build-linux:
+  parallel: !reference [.featurematrix,parallel]
   extends:
-    - .build-linux-default
-    - .not-scheduled
-
-build-linux-nofeat:
-  extends:
-    - .build-linux-nofeat
-    - .not-scheduled
-
-build-linux-only-xenstore:
-  extends:
-    - .build-linux-only-xenstore
-    - .not-scheduled
-
-build-linux-only-netlink:
-  extends:
-    - .build-linux-only-netlink
-    - .not-scheduled
-
-build-linux-only-pnet:
-  extends:
-    - .build-linux-only-pnet
+    - .debian-build-template
     - .not-scheduled
 
 ## continuous checking against most recent dependencies
 
-.latest-scheduled:
+build-latest-linux:
+  parallel: !reference [.featurematrix,parallel]
   extends:
+    - .debian-build-template
     - .scheduled
   before_script:
     - !reference [".debian-build-template", "before_script"]
@@ -95,28 +58,3 @@ build-linux-only-pnet:
   after_script:
     # show which dependencies changed in Cargo.lock
     - git diff
-
-build-latest-linux-default:
-  extends:
-    - .build-linux-default
-    - .latest-scheduled
-
-build-latest-linux-nofeat:
-  extends:
-    - .build-linux-nofeat
-    - .latest-scheduled
-
-build-latest-linux-only-xenstore:
-  extends:
-    - .build-linux-only-xenstore
-    - .latest-scheduled
-
-build-latest-linux-only-netlink:
-  extends:
-    - .build-linux-only-netlink
-    - .latest-scheduled
-
-build-latest-linux-only-pnet:
-  extends:
-    - .build-linux-only-pnet
-    - .latest-scheduled
