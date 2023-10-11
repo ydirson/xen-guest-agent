@@ -1,4 +1,4 @@
-# Draft interface from guest tools data
+# Draft/proposed interface for guest tools data
 
 This is a proposal about sets of data to be collected for publication
 outside of the guest for administration needs, general principles on
