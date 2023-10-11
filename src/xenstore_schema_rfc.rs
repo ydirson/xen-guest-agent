@@ -8,7 +8,7 @@ pub struct Schema {
     xs: Xs,
 }
 
-const PROTOCOL_VERSION: &str = "0.1.0";
+const PROTOCOL_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 // FIXME: this should be a runtime config of xenstore-std.rs
 
