@@ -25,11 +25,11 @@ struct IfaceIpStruct {
 }
 type IpList = HashMap<String, IfaceIpStruct>;
 
-
+// pseudo version for xe-daemon compatibility, real agent version in
+// BuildVersion below
 const AGENT_VERSION_MAJOR: &str = "1"; // XO does not show version at all if 0
 const AGENT_VERSION_MINOR: &str = "0";
 const AGENT_VERSION_MICRO: &str = "0"; // XAPI exposes "-1" if missing
-const AGENT_VERSION_BUILD: &str = "proto"; // only place where we can be clear :)
 
 impl Schema {
     pub fn new(xs: Xs) -> Box<dyn XenstoreSchema> {
@@ -47,7 +47,8 @@ impl XenstoreSchema for Schema {
         xs_publish(&self.xs, "attr/PVAddons/MajorVersion", AGENT_VERSION_MAJOR)?;
         xs_publish(&self.xs, "attr/PVAddons/MinorVersion", AGENT_VERSION_MINOR)?;
         xs_publish(&self.xs, "attr/PVAddons/MicroVersion", AGENT_VERSION_MICRO)?;
-        xs_publish(&self.xs, "attr/PVAddons/BuildVersion", AGENT_VERSION_BUILD)?;
+        let agent_version_build = format!("proto-{}", &env!("CARGO_PKG_VERSION"));
+        xs_publish(&self.xs, "attr/PVAddons/BuildVersion", agent_version_build.as_str())?;
 
         xs_publish(&self.xs, "data/os_distro", &os_info.os_type().to_string())?;
         xs_publish(&self.xs, "data/os_name",
