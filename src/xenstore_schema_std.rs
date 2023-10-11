@@ -64,7 +64,7 @@ impl XenstoreSchema for Schema {
             },
             _ => {
                 // FIXME what to do with strings?
-                println!("cannot parse yet os version {}", os_version);
+                println!("cannot parse yet os version {:?}", os_version);
             }
         }
         if let Some(kernel_info) = kernel_info {
