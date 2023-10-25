@@ -1013,6 +1013,7 @@ dependencies = [
  "tokio",
  "uname",
  "xenstore-rs",
+ "xenstore-sys",
 ]
 
 [[package]]
