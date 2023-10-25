@@ -42,7 +42,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let kernel_info = collect_kernel()?;
     let mem_total_kb = match collector_memory.get_total_kb() {
         Ok(mem_total_kb) => Some(mem_total_kb),
-        Err(error) => { println!("No memory stats: {error}");
+        Err(error) => { log::warn!("No memory stats: {error}");
                         None
         },
         // FIXME should propagate errors other than io::ErrorKind::Unsupported

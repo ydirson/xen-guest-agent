@@ -73,7 +73,7 @@ impl NetworkSource {
             };
             let iface_adresses = network_view.get(name).unwrap_or(&empty_address_set);
             for disappearing in addresses.difference(iface_adresses) {
-                //println!("disappearing {}: {:?}", iface.name, disappearing);
+                log::trace!("disappearing {}: {:?}", iface.name, disappearing);
                 events.push(NetEvent{iface: iface.clone(),
                                      op: match disappearing {
                                          Address::IP(ip) => NetEventOp::RmIp(ip.ip()),
@@ -89,7 +89,7 @@ impl NetworkSource {
             };
             let cache_adresses = self.cache.get(name).unwrap_or(&empty_address_set);
             for appearing in addresses.difference(cache_adresses) {
-                //println!("appearing {}: {:?}", iface.name, appearing);
+                log::trace!("appearing {}: {:?}", iface.name, appearing);
                 events.push(NetEvent{iface: iface.clone(),
                                      op: match appearing {
                                          Address::IP(ip) => NetEventOp::AddIp(ip.ip()),

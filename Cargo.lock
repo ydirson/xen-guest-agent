@@ -992,6 +992,7 @@ dependencies = [
  "futures",
  "ipnetwork",
  "libc",
+ "log",
  "netlink-packet-core",
  "netlink-packet-route",
  "netlink-proto",
