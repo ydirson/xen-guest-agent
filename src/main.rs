@@ -35,6 +35,8 @@ const MEM_PERIOD_SECONDS: u64 = 60;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
+    setup_logger()?;
+
     let mut publisher = Publisher::new()?;
 
     let mut collector_memory = MemorySource::new()?;
@@ -42,7 +44,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let kernel_info = collect_kernel()?;
     let mem_total_kb = match collector_memory.get_total_kb() {
         Ok(mem_total_kb) => Some(mem_total_kb),
-        Err(error) => { println!("No memory stats: {error}");
+        Err(error) => { log::warn!("No memory stats: {error}");
                         None
         },
         // FIXME should propagate errors other than io::ErrorKind::Unsupported
@@ -89,6 +91,32 @@ async fn main() -> Result<(), Box<dyn Error>> {
         }
     }
 
+    Ok(())
+}
+
+#[cfg(not(unix))]
+// stdout logger for platforms with no specific implementation
+fn setup_logger() -> Result<(), Box<dyn Error>> {
+    env_logger::init();
+    Ok(())
+}
+
+#[cfg(unix)]
+// syslog logger
+fn setup_logger() -> Result<(), Box<dyn Error>> {
+    let formatter = syslog::Formatter3164 {
+        facility: syslog::Facility::LOG_USER,
+        hostname: None,
+        process: env!("CARGO_PKG_NAME").into(),
+        pid: 0,
+    };
+
+    let logger = match syslog::unix(formatter) {
+        Err(e) => { eprintln!("impossible to connect to syslog: {:?}", e); return Ok(()); },
+        Ok(logger) => logger,
+    };
+    log::set_boxed_logger(Box::new(syslog::BasicLogger::new(logger)))?;
+    log::set_max_level(log::LevelFilter::Info);
     Ok(())
 }
 

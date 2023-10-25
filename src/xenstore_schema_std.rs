@@ -64,7 +64,8 @@ impl XenstoreSchema for Schema {
             },
             _ => {
                 // FIXME what to do with strings?
-                println!("cannot parse yet os version {:?}", os_version);
+                // the lack of `os_*ver` is anyway not a big deal
+                log::info!("cannot parse yet os version {:?}", os_version);
             }
         }
         if let Some(kernel_info) = kernel_info {
@@ -84,7 +85,7 @@ impl XenstoreSchema for Schema {
             // condition)
             match xs_publish(&self.xs, "control/feature-balloon", "1") {
                 Err(e) if e.kind() == std::io::ErrorKind::PermissionDenied => {
-                    println!("NOTE: cannot write control/feature-balloon (impacts XAPI's squeezed)");
+                    log::warn!("cannot write control/feature-balloon (impacts XAPI's squeezed)");
                     self.forbidden_control_feature_balloon = true;
                 },
                 Ok(_) => (),

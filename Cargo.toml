@@ -21,9 +21,14 @@ os_info = { version = "3", default-features = false }
 pnet_datalink = { version = "*", optional = true }
 pnet_base = { version = "*", optional = true }
 ipnetwork = { version = "*", optional = true }
+log = "0.4.0"
 
 [target.'cfg(unix)'.dependencies]
 uname = "0.1.1"
+syslog = "6.0"
+
+[target.'cfg(not(unix))'.dependencies]
+env_logger = "0.10.0"
 
 [features]
 default = ["xenstore", "net_netlink"]

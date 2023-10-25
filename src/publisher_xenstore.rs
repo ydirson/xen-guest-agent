@@ -48,11 +48,11 @@ fn schema_from_name(name: &str) -> io::Result<&'static dyn Fn(Xs) -> Box<dyn Xen
 }
 
 pub fn xs_publish(xs: &Xs, key: &str, value: &str) -> io::Result<()> {
-    println!("W: {}={:?}", key, value);
+    log::trace!("+ {}={:?}", key, value);
     xs.write(XBTransaction::Null, key, value)
 }
 
 pub fn xs_unpublish(xs: &Xs, key: &str) -> io::Result<()> {
-    println!("D: {}", key);
+    log::trace!("- {}", key);
     xs.rm(XBTransaction::Null, key)
 }
