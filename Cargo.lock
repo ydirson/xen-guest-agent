@@ -1017,8 +1017,9 @@ dependencies = [
 
 [[package]]
 name = "xenstore-rs"
-version = "0.3.2"
-source = "git+https://github.com/Wenzel/xenstore.git?branch=master#ba54e2f40cc5583fb95b0d824876b1f6c0a4c802"
+version = "0.3.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8ddea8a0dc543cd9860b5ca7dc02da37e28d1c7ce20cfdf55c611e91afb8adf0"
 dependencies = [
  "enum-primitive-derive",
  "libc",
