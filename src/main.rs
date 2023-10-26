@@ -14,6 +14,7 @@ mod xenstore_schema_rfc;
 mod collector_net;
 
 #[cfg_attr(target_os = "linux", path = "collector_memory_linux.rs")]
+#[cfg_attr(target_os = "freebsd", path = "collector_memory_bsd.rs")]
 mod collector_memory;
 
 #[cfg_attr(target_os = "linux", path = "vif_detect_linux.rs")]

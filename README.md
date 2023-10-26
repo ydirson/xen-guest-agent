@@ -118,6 +118,8 @@ variables:
   (identification of whether a NIC is a VIF, with a rough /sys-based
   implementation for Linux, and a rough implementation for FreeBSD
   based on interface name)
+* memory collectors are implemented only for Linux and FreeBSD (the
+  FreeBSD one could possibly be activated on other BSD variants)
 * access to Xenstore is done using Mathieu Tarral's early-stage work
   on [Rust Xenstore bindings](https://lib.rs/crates/xenstore-rs).  An
   official Rust Xenstore API will be required at some point; another
