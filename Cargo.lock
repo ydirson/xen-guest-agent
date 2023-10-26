@@ -1159,7 +1159,6 @@ dependencies = [
  "tokio",
  "uname",
  "xenstore-rs",
- "xenstore-sys",
 ]
 
 [[package]]
@@ -1178,9 +1177,9 @@ dependencies = [
 
 [[package]]
 name = "xenstore-sys"
-version = "0.1.2"
+version = "0.1.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "743f4e16be70e3240f82ca8f9a01db937048ef090082fbc7d65d7ef9a6cc0b69"
+checksum = "c65a2d5fcc3634d9fdae6a388dbab071bf72ecf34ec530a705dca644dd60f543"
 dependencies = [
  "bindgen",
 ]
