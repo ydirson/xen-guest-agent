@@ -44,10 +44,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let kernel_info = collect_kernel()?;
     let mem_total_kb = match collector_memory.get_total_kb() {
         Ok(mem_total_kb) => Some(mem_total_kb),
-        Err(error) => { log::warn!("No memory stats: {error}");
-                        None
-        },
-        // FIXME should propagate errors other than io::ErrorKind::Unsupported
+        Err(error) if error.kind() == io::ErrorKind::Unsupported
+            => { log::warn!("Memory stats not supported");
+                 None
+            },
+        // propagate errors other than io::ErrorKind::Unsupported
+        Err(error) => Err(error)?,
     };
     publisher.publish_static(&os_info::get(), &kernel_info, mem_total_kb)?;
 
@@ -83,8 +85,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
             _ = timer_stream.tick().fuse() => {
                 match collector_memory.get_available_kb() {
                     Ok(mem_avail_kb) => publisher.publish_memfree(mem_avail_kb)?,
-                    Err(_) => (),
-                    // FIXME should propagate errors other than io::ErrorKind::Unsupported
+                    Err(ref e) if e.kind() == io::ErrorKind::Unsupported => (),
+                    Err(e) => Err(e)?,
                 }
             },
             complete => break,
