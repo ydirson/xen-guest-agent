@@ -2,7 +2,7 @@ use crate::datastructs::{KernelInfo, NetEvent};
 use std::env;
 use std::error::Error;
 use std::io;
-use xenstore_rs::{Xs, XsOpenFlags, XBTransaction};
+use xenstore_rs::{Xs, XsOpenFlags};
 
 pub trait XenstoreSchema {
     fn publish_static(&mut self, os_info: &os_info::Info, kernel_info: &Option<KernelInfo>,
@@ -49,10 +49,10 @@ fn schema_from_name(name: &str) -> io::Result<&'static dyn Fn(Xs) -> Box<dyn Xen
 
 pub fn xs_publish(xs: &Xs, key: &str, value: &str) -> io::Result<()> {
     log::trace!("+ {}={:?}", key, value);
-    xs.write(XBTransaction::Null, key, value)
+    xs.write(None, key, value)
 }
 
 pub fn xs_unpublish(xs: &Xs, key: &str) -> io::Result<()> {
     log::trace!("- {}", key);
-    xs.rm(XBTransaction::Null, key)
+    xs.rm(None, key)
 }
