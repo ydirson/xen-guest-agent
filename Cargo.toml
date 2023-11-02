@@ -29,6 +29,9 @@ syslog = "6.0"
 [target.'cfg(not(unix))'.dependencies]
 env_logger = "0.10.0"
 
+[target.'cfg(target_os = "freebsd")'.dependencies]
+sysctl = "0.5.0"
+
 [features]
 default = ["xenstore", "net_netlink"]
 xenstore = ["dep:xenstore-rs"]
