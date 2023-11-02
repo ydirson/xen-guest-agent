@@ -37,7 +37,7 @@ impl Publisher {
             NetEventOp::RmMac(mac_address) => println!("{iface_id} -MAC {mac_address}"),
             _ =>
                 return Err(io::Error::new(io::ErrorKind::InvalidData,
-                                          "unhandled RtnlMessage: {nl_msg:?}")),
+                                          format!("unhandled NetEvent: {event:?}"))),
         }
         Ok(())
     }
