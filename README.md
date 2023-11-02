@@ -116,14 +116,12 @@ variables:
   XenStore, with compatibility for today's Xenserver tool or with an
   alternative "rfc" structure), with additional helpers
   (identification of whether a NIC is a VIF, with a rough /sys-based
-  implementation for Linux, and a rough untested implementation for
-  FreeBSD based on interface name)
+  implementation for Linux, and a rough implementation for FreeBSD
+  based on interface name)
 * access to Xenstore is done using Mathieu Tarral's early-stage work
-  on [Rust Xenstore bindings](https://lib.rs/crates/xenstore-rs),
-  which we [enhanced with write
-  access](https://github.com/Wenzel/xenstore/pull/10).  An official
-  Rust Xenstore API will be required at some point; another candidate
-  would be Starlab's [pure-Rust libxenstore
+  on [Rust Xenstore bindings](https://lib.rs/crates/xenstore-rs).  An
+  official Rust Xenstore API will be required at some point; another
+  candidate would be Starlab's [pure-Rust libxenstore
   implementation](https://github.com/starlab-io/xenstore-rs), which is
   also in a prototype state
 * the Xenstore publisher's "std" schema exposes only information
