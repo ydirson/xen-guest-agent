@@ -24,10 +24,12 @@ impl MemorySource {
         self.meminfo.read_to_string(&mut rawdata)?;
         let tagindex = rawdata
             .find(tag)
-            .ok_or(io::Error::new(io::ErrorKind::InvalidData, "could not find {tag}"))?;
+            .ok_or(io::Error::new(io::ErrorKind::InvalidData,
+                                  format!("could not find {tag}")))?;
         let numindex = rawdata[tagindex + tag.len()..]
             .find(|c: char| c.is_ascii_digit())
-            .ok_or(io::Error::new(io::ErrorKind::InvalidData, "no number after {tag}"))?;
+            .ok_or(io::Error::new(io::ErrorKind::InvalidData,
+                                  format!("no number after {tag}")))?;
         let num_start = tagindex + tag.len() + numindex;
         let num_end = num_start + (rawdata[num_start..]
                                    .find(|c: char| !c.is_ascii_digit())

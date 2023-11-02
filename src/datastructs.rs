@@ -5,7 +5,7 @@ pub struct KernelInfo {
 }
 
 #[non_exhaustive]
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum ToolstackNetInterface {
     None,
     Vif(u32),
@@ -23,13 +23,14 @@ impl ToolstackNetInterface {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct NetInterface {
     pub index: u32,
     pub name: String,
     pub toolstack_iface: ToolstackNetInterface,
 }
 
+#[derive(Debug)]
 pub enum NetEventOp {
     AddMac(String),
     RmMac(String),
@@ -37,6 +38,7 @@ pub enum NetEventOp {
     RmIp(IpAddr),
 }
 
+#[derive(Debug)]
 pub struct NetEvent {
     pub iface: NetInterface,
     pub op: NetEventOp,

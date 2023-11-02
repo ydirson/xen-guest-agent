@@ -123,7 +123,7 @@ fn netevent_from_rtnetlink(nl_msg: &RtnlMessage) -> io::Result<NetEvent> {
         },
         _ => {
             return Err(io::Error::new(io::ErrorKind::InvalidData,
-                                      "unhandled RtnlMessage: {nl_msg:?}"));
+                                      format!("unhandled RtnlMessage: {nl_msg:?}")));
         },
     };
     Ok(event)
