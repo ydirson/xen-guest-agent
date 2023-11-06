@@ -112,3 +112,42 @@ cargo build --release --no-default-features -F xenstore,net_pnet
 
 mv target/release/xen-guest-agent ../xen-guest-agent-$VERSION-freebsd-x86_64
 ```
+
+## binary packages
+
+Those packaging instructions do not attempt to build from source, for
+reasons [explained here](FIXME).  Instead they rely on the prebuilt
+binaries being available in the same directory as the source tree
+(accessible as `..` from within the source tree).  If you wish to
+package locally-built binaries, adjust accordingly.
+
+outputs:
+- `xen-guest-agent-$VERSION-0.fc37.x86_64.rpm`
+- `xen-guest-agent-debuginfo-$VERSION-0.fc37.x86_64.rpm`
+
+### rpm packages
+
+> **Note**
+>
+> RHEL and their rebuilds do not have `xen-libs` package readily
+> available, so will need more work and is not covered here yet.
+
+These instructions describe building the RPM in a container
+environment such as `fedora:37`, using rootless podman.  Set it up with:
+
+```
+xen-guest-agent$ mkdir -p SOURCES
+xen-guest-agent$ ln -sr ../xen-guest-agent-$UPSTREAMVERSION-linux-x86_64 SOURCES/xen-guest-agent
+xen-guest-agent$ ln -sr startup/xen-guest-agent.service SOURCES/
+xen-guest-agent$ podman run -v $PWD/..:/data --userns=keep-id -u root -it --rm fedora:37 bash
+[root /]# dnf install -y rpm-build dnf-utils
+[root /]# dnf builddep /data/xen-guest-agent/xen-guest-agent.spec -y
+```
+
+Build the RPM:
+
+```
+[root /]# sudo -u user -i
+$ cd /data/xen-guest-agent
+$ rpmbuild -bb xen-guest-agent.spec --define "_topdir $(pwd)"
+```
