@@ -1184,13 +1184,15 @@ dependencies = [
 
 [[package]]
 name = "xenstore-rs"
-version = "0.4.0"
+version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0234be1ef65695e95ad44d7714cb7455846eae8ef30685a2173a9d6770e1ab85"
+checksum = "c26625ab5ad3e480cf74a06d0595229eadac95029270461b8143d59dc00ea7ff"
 dependencies = [
+ "futures",
  "libc",
  "libloading 0.8.1",
  "log",
+ "tokio",
  "xenstore-sys",
 ]
 
