@@ -3,5 +3,6 @@ pre-build = ["""
 mkdir -p /usr/local/x86_64-unknown-freebsd12/usr &&
 ln -s ../include /usr/local/x86_64-unknown-freebsd12/usr/include &&
 ln -s ../lib /usr/local/x86_64-unknown-freebsd12/usr/lib &&
-bash -c ". /freebsd-install.sh && install_freebsd_package xen-tools"
+PKG=$(./devscripts/freebsd-fetch-package.sh xen-tools) &&
+tar -C /usr/local/x86_64-unknown-freebsd12/ --xform s,^/usr/local/,/usr/, -xf $PKG
 """]
