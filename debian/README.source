@@ -1,0 +1,7 @@
+xen-guest-agent for Debian
+-------------------------
+
+This package does not build from source, due to the complexity to do
+so with Rust to support anything older than testing.
+
+ -- Yann Dirson <yann.dirson@vates.tech>  Mon, 13 Nov 2023 17:20:52 +0100

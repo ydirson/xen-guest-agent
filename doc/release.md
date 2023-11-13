@@ -124,6 +124,8 @@ package locally-built binaries, adjust accordingly.
 outputs:
 - `xen-guest-agent-$VERSION-0.fc37.x86_64.rpm`
 - `xen-guest-agent-debuginfo-$VERSION-0.fc37.x86_64.rpm`
+- `xen-guest-agent_$VERSION_amd64.deb`
+- `xen-guest-agent-dbgsym_$VERSION_amd64.deb`
 
 ### rpm packages
 
@@ -150,4 +152,19 @@ Build the RPM:
 [root /]# sudo -u user -i
 $ cd /data/xen-guest-agent
 $ rpmbuild -bb xen-guest-agent.spec --define "_topdir $(pwd)"
+```
+
+### deb package
+
+We build in a Debian 10 container, using deb `debian/` directory from
+the git tree, but the prebuilt binary (by default in `..`):
+
+```
+xen-guest-agent$ podman run -v $PWD/..:/data --userns=keep-id -u root -it --rm debian:10 bash
+[root /]# apt update
+[root /]# apt install -y build-essential debhelper
+[root /]# su - user
+$ cd /data/xen-guest-agent
+$ dpkg-checkbuilddeps
+$ fakeroot debian/rules binary
 ```

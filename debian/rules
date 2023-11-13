@@ -1,0 +1,22 @@
+#!/usr/bin/make -f
+
+# See debhelper(7) (uncomment to enable).
+# Output every command that modifies files on the build system.
+export DH_VERBOSE = 1
+
+include /usr/share/dpkg/architecture.mk
+include /usr/share/dpkg/pkg-info.mk
+
+UPSTREAM_VERSION = $(subst ~,-,$(DEB_VERSION))
+
+AGENT_BINARY = ../xen-guest-agent-$(UPSTREAM_VERSION)-linux-$(DEB_TARGET_GNU_CPU)
+
+%:
+	dh $@
+
+build:
+	: we package prebuilt binaries
+
+override_dh_auto_install:
+	install -m755 -D $(AGENT_BINARY) \
+	  debian/xen-guest-agent/usr/sbin/xen-guest-agent

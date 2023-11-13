@@ -1,0 +1,5 @@
+xen-guest-agent (0.2.0) UNRELEASED; urgency=medium
+
+  * Upstream package from release binaries.
+
+ -- Yann Dirson <yann.dirson@vates.tech>  Mon, 13 Nov 2023 17:20:52 +0100
