@@ -15,7 +15,7 @@ variables:
 .build-template:
   stage: build
   script:
-    - cargo build ${FEATURES}
+    - cargo build ${FEATURES} ${CARGO_FLAGS}
 
 .debian-build-template:
   extends:
@@ -52,6 +52,8 @@ build-linux:
   extends:
     - .debian-build-template
     - .not-scheduled
+  variables:
+    CARGO_FLAGS: "-v"
 
 ## continuous checking against most recent dependencies
 
