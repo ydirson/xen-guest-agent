@@ -10,12 +10,12 @@ workflow:
     - if: $CI_COMMIT_BRANCH
 
 variables:
-  LINUX_RUSTIMG: "rust:latest"
+  LINUX_RUSTIMG: "rust:buster"
 
 .build-template:
   stage: build
   script:
-    - cargo build ${FEATURES}
+    - cargo build ${FEATURES} ${CARGO_FLAGS}
 
 .debian-build-template:
   extends:
@@ -23,7 +23,7 @@ variables:
   image: ${LINUX_RUSTIMG}
   before_script:
     - apt-get update
-    - apt-get install -y llvm-dev libclang-dev libxen-dev
+    - apt-get install -y llvm-dev clang libxen-dev
 
 .scheduled:
   rules:
@@ -52,6 +52,19 @@ build-linux:
   extends:
     - .debian-build-template
     - .not-scheduled
+  variables:
+    CARGO_FLAGS: "-v"
+
+build-release-linux-x86_64:
+  extends:
+    - .debian-build-template
+    - .not-scheduled
+  variables:
+    FEATURES: ""
+    CARGO_FLAGS: "--release"
+  artifacts:
+    paths:
+      - target/release/xen-guest-agent
 
 ## continuous checking against most recent dependencies
 
