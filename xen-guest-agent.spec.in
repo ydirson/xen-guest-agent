@@ -1,6 +1,6 @@
 Name:           xen-guest-agent
-Version:        0.2.0
-%define upstreamversion %{version}
+Version:        @@VERSION@@
+%define upstreamversion @@UPSTREAMVERSION@@
 Release:        0%{dist}
 Summary:        Agent for Xen virtual machine
 
@@ -41,5 +41,5 @@ Conflicts: xe-guest-utilities
 %systemd_postun xen-guest-agent.service
 
 %changelog
-* Mon Nov 06 2023 Yann Dirson <yann.dirson@vates.tech> - 0.2.0-0
+* @@DATE@@ @@AUTHOR@@ - @@VERSION@@-0
 - Upstream package from release binaries

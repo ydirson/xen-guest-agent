@@ -169,6 +169,14 @@ rpm-x86_64:
     - mkdir SOURCES
     - ln -sr target/release/xen-guest-agent SOURCES/
     - ln -sr startup/xen-guest-agent.service SOURCES/
+    - 'UPSTREAMVERSION=$(grep "^version =" Cargo.toml | cut -d\" -f2)'
+    - 'VERSION=$(echo $UPSTREAMVERSION | tr "-" "~")'
+    - >-
+      sed  < xen-guest-agent.spec.in > xen-guest-agent.spec
+      -e "s/@@UPSTREAMVERSION@@/$UPSTREAMVERSION/"
+      -e "s/@@VERSION@@/$VERSION/"
+      -e "s/@@AUTHOR@@/$GITLAB_USER_NAME <$GITLAB_USER_EMAIL>/"
+      -e "s/@@DATE@@/$(date +"%a %b %d %Y")/"
     - dnf builddep xen-guest-agent.spec -y
   script:
     - 'rpmbuild -bb xen-guest-agent.spec --define "_topdir $(pwd)"'

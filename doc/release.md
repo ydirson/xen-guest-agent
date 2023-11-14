@@ -15,7 +15,7 @@ outputs:
 
 operations:
 - check with `cargo outdated` not to miss any outdated dependency
-- update version in `Cargo.toml`, `xen-guest-agent.spec`
+- update version in `Cargo.toml`
 - run `cargo tree` (or any cargo command updating the version in `Cargo.lock`
 - `git commit Cargo.toml Cargo.lock -m "Release $VERSION"`
 - `git tag $VERSION -m $VERSION`
@@ -137,9 +137,12 @@ This is the basis of the `rpm-x86_64` CI job.
 > available, so will need more work and is not covered here yet.
 
 These instructions describe building the RPM in a container
-environment such as `fedora:37`, using rootless podman.  Set it up with:
+environment such as `fedora:37`, using rootless podman.  Note that the
+specfile, which contains the version and packaging date, has to be
+generated first from the `.in` template:
 
 ```
+xen-guest-agent$ sed -e "s/@@VERSION@@/$VERSION/" -e "s/@@UPSTREAMVERSION@@/$UPSTREAMVERSION/" -e "s/@@AUTHOR@@/$USER <$EMAIL>/" -e "s/@@DATE@@/$(date +"%a %b %d %Y")/" < xen-guest-agent.spec.in > xen-guest-agent.spec
 xen-guest-agent$ mkdir -p SOURCES
 xen-guest-agent$ ln -sr ../xen-guest-agent-$UPSTREAMVERSION-linux-x86_64 SOURCES/xen-guest-agent
 xen-guest-agent$ ln -sr startup/xen-guest-agent.service SOURCES/
