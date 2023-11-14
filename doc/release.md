@@ -33,9 +33,12 @@ outputs:
 
 ### Linux `x86_64` "2019" binary
 
-These instructions describe building the binary in a `debian:10` container
-environment, so it could run in all Linux distros released since 2019.
-Set it up with:
+These instructions describe building the binary in a `debian:10`
+container environment, so it could run in all Linux distros released
+since 2019.  They are the basis of the `build-release-linux-x86_64` CI
+job.
+
+To build it locally using `podman`:
 
 ```
 xen-guest-agent$ podman run -v $PWD/..:/data --userns=keep-id -u root -it --rm debian:10 bash

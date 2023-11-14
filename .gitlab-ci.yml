@@ -55,6 +55,17 @@ build-linux:
   variables:
     CARGO_FLAGS: "-v"
 
+build-release-linux-x86_64:
+  extends:
+    - .debian-build-template
+    - .not-scheduled
+  variables:
+    FEATURES: ""
+    CARGO_FLAGS: "--release"
+  artifacts:
+    paths:
+      - target/release/xen-guest-agent
+
 ## continuous checking against most recent dependencies
 
 build-latest-linux:
