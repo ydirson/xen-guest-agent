@@ -10,7 +10,7 @@ workflow:
     - if: $CI_COMMIT_BRANCH
 
 variables:
-  LINUX_RUSTIMG: "rust:latest"
+  LINUX_RUSTIMG: "rust:buster"
 
 .build-template:
   stage: build
@@ -23,7 +23,7 @@ variables:
   image: ${LINUX_RUSTIMG}
   before_script:
     - apt-get update
-    - apt-get install -y llvm-dev libclang-dev libxen-dev
+    - apt-get install -y llvm-dev clang libxen-dev
 
 .scheduled:
   rules:
