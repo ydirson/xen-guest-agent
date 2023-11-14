@@ -6,7 +6,7 @@ automated by scripts and CI jobs.
 These instructions assume you replace `$VERSION` with the actual
 version being released.
 
-## source artfacts
+## source artifacts
 
 outputs:
 - git tag
@@ -14,7 +14,10 @@ outputs:
 - source tarball
 
 operations:
-- update version in Cargo.toml, xen-guest-agent.spec, debian/changelog
+- check with `cargo outdated` not to miss any outdated dependency
+- update version in `Cargo.toml`, `xen-guest-agent.spec`, `debian/changelog`
+- run `cargo tree` (or any cargo command updating the version in `Cargo.lock`
+- `git commit Cargo.toml Cargo.lock -m "Release $VERSION"`
 - `git tag $VERSION -m $VERSION`
 - `cargo package`
 - `mv target/package/xen-guest-agent-$VERSION.crate ../xen-guest-agent-$VERSION.tar.gz`
@@ -38,7 +41,7 @@ container environment, so it could run in all Linux distros released
 since 2019.  They are the basis of the `build-release-linux-x86_64` CI
 job.
 
-To build it locally using `podman`:
+To build it locally using rootless `podman`:
 
 ```
 xen-guest-agent$ podman run -v $PWD/..:/data --userns=keep-id -u root -it --rm debian:10 bash
@@ -53,8 +56,6 @@ $ cd /data/xen-guest-agent
 $ cargo clean
 $ cargo build --release
 $ mv target/release/xen-guest-agent ../xen-guest-agent-$VERSION-linux-x86_64
-$ exit
-[root /]# exit
 ```
 
 > **Note**
@@ -67,12 +68,12 @@ $ exit
 
 > **Warning**
 >
-> Instructions not working yet, clang 3.8 too old despite bindgen
-> claiming it needs only 3.5?
+> Instructions not working yet, [clang 3.8 apparently misses a symbol
+> added in 3.5](https://github.com/KyleMayes/clang-sys/issues/163)
 
-These instructions describe building the binary in a `debian:9` Docker
-environment, so it could run in all Linux distros released since 2017.
-Set it up with:
+These instructions describe building the binary in a `debian:9`
+container environment, so it could run in all Linux distros released
+since 2017.  Set it up with:
 
 ```
 xen-guest-agent$ docker run -v $PWD/..:/data -it --rm debian:9 bash
