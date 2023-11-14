@@ -156,6 +156,8 @@ $ rpmbuild -bb xen-guest-agent.spec --define "_topdir $(pwd)"
 
 ### deb package
 
+This is the basis of the `deb-amd64` CI job.
+
 We build in a Debian 10 container, using deb `debian/` directory from
 the git tree, but the prebuilt binary (by default in `..`):
 

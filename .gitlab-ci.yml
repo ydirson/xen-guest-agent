@@ -1,5 +1,6 @@
 stages:
   - build
+  - package
 
 # prevent duplicate pipelines for merge request
 workflow:
@@ -133,3 +134,21 @@ build-latest-linux:
   after_script:
     # show which dependencies changed in Cargo.lock
     - git diff
+
+## packaging from binary artifacts
+
+deb-amd64:
+  stage: package
+  image: "debian:10"
+  needs:
+    - build-release-linux-x86_64
+  before_script:
+    - apt update
+    - apt install -y build-essential debhelper
+    - dpkg-checkbuilddeps
+  script:
+    - fakeroot debian/rules binary AGENT_BINARY="target/release/xen-guest-agent"
+    - mv -v ../*.deb target/release/
+  artifacts:
+    paths:
+      - target/release/*.deb
