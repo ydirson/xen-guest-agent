@@ -129,6 +129,8 @@ outputs:
 
 ### rpm packages
 
+This is the basis of the `rpm-x86_64` CI job.
+
 > **Note**
 >
 > RHEL and their rebuilds do not have `xen-libs` package readily

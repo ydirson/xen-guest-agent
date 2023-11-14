@@ -158,3 +158,20 @@ deb-amd64:
   artifacts:
     paths:
       - target/release/*.deb
+
+rpm-x86_64:
+  stage: package
+  image: "fedora:37"
+  needs:
+    - build-release-linux-x86_64
+  before_script:
+    - dnf install -y rpm-build dnf-utils
+    - mkdir SOURCES
+    - ln -sr target/release/xen-guest-agent SOURCES/
+    - ln -sr startup/xen-guest-agent.service SOURCES/
+    - dnf builddep xen-guest-agent.spec -y
+  script:
+    - 'rpmbuild -bb xen-guest-agent.spec --define "_topdir $(pwd)"'
+  artifacts:
+    paths:
+      - RPMS/*/*.rpm
