@@ -146,7 +146,13 @@ deb-amd64:
     - apt update
     - apt install -y build-essential debhelper
     - dpkg-checkbuilddeps
+    - 'VERSION=$(grep "^version =" Cargo.toml | cut -d\" -f2 | tr "-" "~")'
   script:
+    - >-
+      sed < debian/changelog.in > debian/changelog
+      -e "s/@@VERSION@@/$VERSION/"
+      -e "s/@@AUTHOR@@/$GITLAB_USER_NAME <$GITLAB_USER_EMAIL>/"
+      -e "s/@@DATE@@/$(date --rfc-822)/"
     - fakeroot debian/rules binary AGENT_BINARY="target/release/xen-guest-agent"
     - mv -v ../*.deb target/release/
   artifacts:

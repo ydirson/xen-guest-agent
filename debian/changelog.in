@@ -1,0 +1,5 @@
+xen-guest-agent (@@VERSION@@) UNRELEASED; urgency=medium
+
+  * Upstream package from release binaries.
+
+ -- @@AUTHOR@@  @@DATE@@

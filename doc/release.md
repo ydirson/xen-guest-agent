@@ -15,7 +15,7 @@ outputs:
 
 operations:
 - check with `cargo outdated` not to miss any outdated dependency
-- update version in `Cargo.toml`, `xen-guest-agent.spec`, `debian/changelog`
+- update version in `Cargo.toml`, `xen-guest-agent.spec`
 - run `cargo tree` (or any cargo command updating the version in `Cargo.lock`
 - `git commit Cargo.toml Cargo.lock -m "Release $VERSION"`
 - `git tag $VERSION -m $VERSION`
@@ -159,9 +159,12 @@ $ rpmbuild -bb xen-guest-agent.spec --define "_topdir $(pwd)"
 This is the basis of the `deb-amd64` CI job.
 
 We build in a Debian 10 container, using deb `debian/` directory from
-the git tree, but the prebuilt binary (by default in `..`):
+the git tree, but the prebuilt binary (by default in `..`).  Note that
+the `debian/changelog` file, which contains the version and packaging
+date, has to be generated first from the `.in` template:
 
 ```
+xen-guest-agent$ sed -e "s/@@VERSION@@/$VERSION/" -e "s/@@AUTHOR@@/$USER <$EMAIL>/" -e "s/@@DATE@@/$(date --rfc-822)/" < debian/changelog.in > debian/changelog
 xen-guest-agent$ podman run -v $PWD/..:/data --userns=keep-id -u root -it --rm debian:10 bash
 [root /]# apt update
 [root /]# apt install -y build-essential debhelper
