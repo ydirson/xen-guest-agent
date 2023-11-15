@@ -25,6 +25,32 @@ variables:
     - apt-get update
     - apt-get install -y llvm-dev clang libxen-dev
 
+.cross-build-template:
+  extends:
+    - .build-template
+  image: ghcr.io/cross-rs/$CARGO_BUILD_TARGET:main
+  before_script:
+    # install Rust
+    - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path
+    - . "$HOME/.cargo/env"
+    - rustup target add $CARGO_BUILD_TARGET
+
+.cross-freebsd12-x86_64-build-template:
+  extends:
+    - .cross-build-template
+  variables:
+    CARGO_BUILD_TARGET: "x86_64-unknown-freebsd"
+    CROSS_SYSROOT: "/usr/local/x86_64-unknown-freebsd12"
+  before_script:
+    - !reference [.cross-build-template,before_script]
+    # cross sysroot does not match its toolchain
+    - mkdir -p $CROSS_SYSROOT/usr
+    - ln -s ../include $CROSS_SYSROOT/usr/include
+    - ln -s ../lib $CROSS_SYSROOT/usr/lib
+    # build dependencies
+    - PKG=$(./devscripts/freebsd-fetch-package.sh xen-tools)
+    - tar -C $CROSS_SYSROOT/ --xform s,^/usr/local/,/usr/, -xf $PKG
+
 .scheduled:
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
@@ -44,6 +70,15 @@ variables:
           - "--no-default-features -F xenstore"
           - "--no-default-features -F net_netlink"
           - "--no-default-features -F net_pnet"
+
+.featurematrix.no-netlink:
+  parallel:
+    matrix:
+      - FEATURES:
+          - "--no-default-features"
+          - "--no-default-features -F xenstore"
+          - "--no-default-features -F net_pnet"
+          - "--no-default-features -F xenstore,net_pnet"
 
 ## standard jobs building with shipped Cargo.lock
 
@@ -65,6 +100,25 @@ build-release-linux-x86_64:
   artifacts:
     paths:
       - target/release/xen-guest-agent
+
+build-freebsd12-x86_64:
+  extends:
+    - .cross-freebsd12-x86_64-build-template
+    - .not-scheduled
+  variables:
+    CARGO_FLAGS: "-v"
+  parallel: !reference [.featurematrix.no-netlink,parallel]
+
+build-release-freebsd12-x86_64:
+  extends:
+    - .cross-freebsd12-x86_64-build-template
+    - .not-scheduled
+  variables:
+    FEATURES: "--no-default-features -F xenstore,net_pnet"
+    CARGO_FLAGS: "--release"
+  artifacts:
+    paths:
+      - target/x86_64-unknown-freebsd/release/xen-guest-agent
 
 ## continuous checking against most recent dependencies
 

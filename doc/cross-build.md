@@ -45,3 +45,17 @@ Use with simply with:
 ```
 cross build --target x86_64-unknown-freebsd --no-default-features -F net_pnet,xenstore
 ```
+
+## cross-building to FreeBSD in Gitlab CI
+
+In Gitlab CI we use Docker runners.  It makes little sense to use
+`cross` inside a Docker container with the Rust toolchain, just to
+have it launch a nested container with the cross environment (while
+sharing the Rust toolchain into the cross container).  Especially as
+there are as yet unresolved
+[issues](https://github.com/cross-rs/cross/issues/1351) with running
+`cross` nested.
+
+It is however useful to use the `cross-rs` container directly in
+Gitlab CI.  It does not have Rust preinstalled however (the `cross`
+binds it from the host), so we must take care of it.
