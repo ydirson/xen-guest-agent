@@ -1,3 +1,4 @@
+# this file is not used by CI job, but allows to make local cross builds
 [target.x86_64-unknown-freebsd]
 pre-build = ["""
 mkdir -p /usr/local/x86_64-unknown-freebsd12/usr &&
@@ -5,4 +6,11 @@ ln -s ../include /usr/local/x86_64-unknown-freebsd12/usr/include &&
 ln -s ../lib /usr/local/x86_64-unknown-freebsd12/usr/lib &&
 PKG=$(./devscripts/freebsd-fetch-package.sh xen-tools) &&
 tar -C /usr/local/x86_64-unknown-freebsd12/ --xform s,^/usr/local/,/usr/, -xf $PKG
+"""]
+
+[target.aarch64-unknown-linux-gnu]
+pre-build = ["""
+dpkg --add-architecture arm64
+apt-get update
+apt-get install -y libxen-dev:arm64
 """]
