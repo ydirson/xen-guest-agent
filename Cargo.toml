@@ -1,6 +1,6 @@
 [package]
 name = "xen-guest-agent"
-version = "0.3.0-dev"
+version = "0.3.0"
 authors = ["Yann Dirson <yann.dirson@vates.fr>"]
 edition = "2018"
 rust-version = "1.64"
