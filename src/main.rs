@@ -33,6 +33,7 @@ use std::time::Duration;
 
 const REPORT_INTERNAL_NICS: bool = false; // FIXME make this a CLI flag
 const MEM_PERIOD_SECONDS: u64 = 60;
+const DEFAULT_LOGLEVEL: log::LevelFilter = log::LevelFilter::Info;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
@@ -100,7 +101,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
 #[cfg(not(unix))]
 // stdout logger for platforms with no specific implementation
 fn setup_logger() -> Result<(), Box<dyn Error>> {
-    env_logger::init();
+    // set default threshold to "info" not "error"
+    let env = env_logger::Env::default().default_filter_or(DEFAULT_LOGLEVEL.as_str());
+    env_logger::Builder::from_env(env).init();
     Ok(())
 }
 
@@ -119,7 +122,7 @@ fn setup_logger() -> Result<(), Box<dyn Error>> {
         Ok(logger) => logger,
     };
     log::set_boxed_logger(Box::new(syslog::BasicLogger::new(logger)))?;
-    log::set_max_level(log::LevelFilter::Info);
+    log::set_max_level(DEFAULT_LOGLEVEL);
     Ok(())
 }
 
