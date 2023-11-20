@@ -15,8 +15,9 @@ enum Address {
     IP(IpNetwork),
     MAC(MacAddr),
 }
+type NetworkView = HashMap<String, HashSet<Address>>;
 pub struct NetworkSource {
-    cache: HashMap<String, HashSet<Address>>,
+    cache: NetworkView,
 }
 
 impl NetworkSource {
@@ -45,7 +46,7 @@ impl NetworkSource {
         let network_interfaces = pnet_datalink::interfaces();
 
         // get a full view of interfaces, diffable with the cache
-        let mut network_view: HashMap<String, HashSet<Address>> = HashMap::new();
+        let mut network_view: NetworkView = HashMap::new();
         for iface in network_interfaces.iter() {
             // KLUDGE: drop ":alias" suffix for Linux interface aliases
             let name = iface.name.split(":").next().unwrap_or(&iface.name);
