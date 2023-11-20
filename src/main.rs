@@ -21,6 +21,8 @@ mod collector_memory;
 #[cfg_attr(target_os = "freebsd", path = "vif_detect_freebsd.rs")]
 mod vif_detect;
 
+use clap::Parser;
+
 use crate::datastructs::KernelInfo;
 use crate::publisher::Publisher;
 use crate::collector_net::NetworkSource;
@@ -37,7 +39,9 @@ const DEFAULT_LOGLEVEL: log::LevelFilter = log::LevelFilter::Info;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
-    setup_logger()?;
+    let cli = Cli::parse();
+
+    setup_logger(cli.stderr)?;
 
     let mut publisher = Publisher::new()?;
 
@@ -98,9 +102,28 @@ async fn main() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-#[cfg(not(unix))]
+#[derive(clap::Parser)]
+struct Cli {
+    /// Print2 logs to stderr instead of system logs
+    #[arg(short, long)]
+    stderr: bool,
+}
+
+fn setup_logger(use_stderr:bool) -> Result<(), Box<dyn Error>> {
+    if use_stderr {
+        setup_env_logger()?;
+    } else {
+        #[cfg(not(unix))]
+        abort!();
+
+        #[cfg(unix)]
+        setup_system_logger()?;
+    }
+    Ok(())
+}
+
 // stdout logger for platforms with no specific implementation
-fn setup_logger() -> Result<(), Box<dyn Error>> {
+fn setup_env_logger() -> Result<(), Box<dyn Error>> {
     // set default threshold to "info" not "error"
     let env = env_logger::Env::default().default_filter_or(DEFAULT_LOGLEVEL.as_str());
     env_logger::Builder::from_env(env).init();
@@ -109,7 +132,7 @@ fn setup_logger() -> Result<(), Box<dyn Error>> {
 
 #[cfg(unix)]
 // syslog logger
-fn setup_logger() -> Result<(), Box<dyn Error>> {
+fn setup_system_logger() -> Result<(), Box<dyn Error>> {
     let formatter = syslog::Formatter3164 {
         facility: syslog::Facility::LOG_USER,
         hostname: None,
