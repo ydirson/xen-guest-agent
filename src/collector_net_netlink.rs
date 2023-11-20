@@ -134,8 +134,12 @@ fn nl_linkmessage_decode(msg: &LinkMessage) -> io::Result<(NetInterface, String)
     let LinkMessage{header, nlas, ..} = msg;
 
     // extract fields of interest
+    let mut iface_name: Option<String> = None;
     let mut address_bytes: Option<&Vec<u8>> = None;
     for nla in nlas {
+        if let link::nlas::Nla::IfName(name) = nla {
+            iface_name = Some(name.to_string());
+        }
         if let link::nlas::Nla::Address(addr) = nla {
             address_bytes = Some(addr);
         }
@@ -146,7 +150,7 @@ fn nl_linkmessage_decode(msg: &LinkMessage) -> io::Result<(NetInterface, String)
                                         .collect::<Vec<String>>().join(":"));
 
     let iface = NetInterface { index: header.index,
-                               name: interface_name(header.index),
+                               name: iface_name.unwrap_or(String::from("")),
                                toolstack_iface: ToolstackNetInterface::None,
     };
 
