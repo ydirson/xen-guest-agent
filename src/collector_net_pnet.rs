@@ -15,14 +15,25 @@ enum Address {
     IP(IpNetwork),
     MAC(MacAddr),
 }
-type NetworkView = HashMap<String, HashSet<Address>>;
+struct InterfaceInfo {
+    name: String,
+    addresses: HashSet<Address>,
+}
+
+impl InterfaceInfo {
+    pub fn new(name: &str) -> InterfaceInfo {
+        InterfaceInfo { name: name.to_string(), addresses: HashSet::new() }
+    }
+}
+
+type NetworkView = HashMap<u32, InterfaceInfo>;
 pub struct NetworkSource {
     cache: NetworkView,
 }
 
 impl NetworkSource {
     pub fn new() -> io::Result<NetworkSource> {
-        Ok(NetworkSource {cache: HashMap::new()})
+        Ok(NetworkSource {cache: NetworkView::new()})
     }
 
     pub async fn collect_current(&mut self) -> Result<Vec<NetEvent>, Box<dyn Error>> {
@@ -46,18 +57,18 @@ impl NetworkSource {
         let network_interfaces = pnet_datalink::interfaces();
 
         // get a full view of interfaces, diffable with the cache
-        let mut network_view: NetworkView = HashMap::new();
+        let mut network_view: NetworkView = NetworkView::new();
         for iface in network_interfaces.iter() {
             // KLUDGE: drop ":alias" suffix for Linux interface aliases
             let name = iface.name.split(":").next().unwrap_or(&iface.name);
             let entry = network_view
-                .entry(name.to_string())
-                .or_insert_with(|| HashSet::new());
+                .entry(iface.index)
+                .or_insert_with(|| InterfaceInfo::new(name));
             for ip in &iface.ips {
-                entry.insert(Address::IP(*ip));
+                entry.addresses.insert(Address::IP(*ip));
             }
             if let Some(mac) = iface.mac {
-                entry.insert(Address::MAC(mac));
+                entry.addresses.insert(Address::MAC(mac));
             }
         }
 
@@ -69,13 +80,18 @@ impl NetworkSource {
         let empty_address_set: HashSet<Address> = HashSet::new();
 
         // disappearing addresses
-        for (name, addresses) in self.cache.iter() {
-            let iface = NetInterface { index: 0, // FIXME interface_number()
-                                       name: name.to_string(),
+        for (cached_iface_index, cached_info) in self.cache.iter() {
+            let iface = NetInterface { index: *cached_iface_index,
+                                       name: cached_info.name.to_string(),
                                        toolstack_iface: ToolstackNetInterface::None,
             };
-            let iface_adresses = network_view.get(name).unwrap_or(&empty_address_set);
-            for disappearing in addresses.difference(iface_adresses) {
+            let iface_adresses =
+                if let Some(iface_info) = network_view.get(cached_iface_index) {
+                    &iface_info.addresses
+                } else {
+                    &empty_address_set
+                };
+            for disappearing in cached_info.addresses.difference(iface_adresses) {
                 log::trace!("disappearing {}: {:?}", iface.name, disappearing);
                 events.push(NetEvent{iface: iface.clone(),
                                      op: match disappearing {
@@ -85,13 +101,18 @@ impl NetworkSource {
             }
         }
         // appearing addresses
-        for (name, addresses) in network_view.iter() {
-            let iface = NetInterface { index: 0, // FIXME interface_number()
-                                       name: name.to_string(),
+        for (iface_index, iface_info) in network_view.iter() {
+            let iface = NetInterface { index: *iface_index,
+                                       name: iface_info.name.to_string(),
                                        toolstack_iface: ToolstackNetInterface::None,
             };
-            let cache_adresses = self.cache.get(name).unwrap_or(&empty_address_set);
-            for appearing in addresses.difference(cache_adresses) {
+            let cache_adresses =
+                if let Some(cache_info) = self.cache.get(iface_index) {
+                    &cache_info.addresses
+                } else {
+                    &empty_address_set
+                };
+            for appearing in iface_info.addresses.difference(cache_adresses) {
                 log::trace!("appearing {}: {:?}", iface.name, appearing);
                 events.push(NetEvent{iface: iface.clone(),
                                      op: match appearing {
