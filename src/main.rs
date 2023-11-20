@@ -21,6 +21,8 @@ mod collector_memory;
 #[cfg_attr(target_os = "freebsd", path = "vif_detect_freebsd.rs")]
 mod vif_detect;
 
+use clap::Parser;
+
 use crate::datastructs::KernelInfo;
 use crate::publisher::Publisher;
 use crate::collector_net::NetworkSource;
@@ -29,14 +31,18 @@ use crate::collector_memory::MemorySource;
 use futures::{FutureExt, pin_mut, select, TryStreamExt};
 use std::error::Error;
 use std::io;
+use std::str::FromStr;
 use std::time::Duration;
 
 const REPORT_INTERNAL_NICS: bool = false; // FIXME make this a CLI flag
 const MEM_PERIOD_SECONDS: u64 = 60;
+const DEFAULT_LOGLEVEL: &str = "info";
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
-    setup_logger()?;
+    let cli = Cli::parse();
+
+    setup_logger(cli.stderr, &cli.loglevel)?;
 
     let mut publisher = Publisher::new()?;
 
@@ -97,16 +103,41 @@ async fn main() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-#[cfg(not(unix))]
+#[derive(clap::Parser)]
+struct Cli {
+    /// Print2 logs to stderr instead of system logs
+    #[arg(short, long)]
+    stderr: bool,
+
+    /// Highest level of detail to log
+    #[arg(short, long, default_value_t = String::from(DEFAULT_LOGLEVEL))]
+    loglevel: String,
+}
+
+fn setup_logger(use_stderr:bool, loglevel_string: &str) -> Result<(), Box<dyn Error>> {
+    if use_stderr {
+        setup_env_logger(loglevel_string)?;
+    } else {
+        #[cfg(not(unix))]
+        abort!();
+
+        #[cfg(unix)]
+        setup_system_logger(loglevel_string)?;
+    }
+    Ok(())
+}
+
 // stdout logger for platforms with no specific implementation
-fn setup_logger() -> Result<(), Box<dyn Error>> {
-    env_logger::init();
+fn setup_env_logger(loglevel_string: &str) -> Result<(), Box<dyn Error>> {
+    // set default threshold to "info" not "error"
+    let env = env_logger::Env::default().default_filter_or(loglevel_string);
+    env_logger::Builder::from_env(env).init();
     Ok(())
 }
 
 #[cfg(unix)]
 // syslog logger
-fn setup_logger() -> Result<(), Box<dyn Error>> {
+fn setup_system_logger(loglevel_string: &str) -> Result<(), Box<dyn Error>> {
     let formatter = syslog::Formatter3164 {
         facility: syslog::Facility::LOG_USER,
         hostname: None,
@@ -119,7 +150,7 @@ fn setup_logger() -> Result<(), Box<dyn Error>> {
         Ok(logger) => logger,
     };
     log::set_boxed_logger(Box::new(syslog::BasicLogger::new(logger)))?;
-    log::set_max_level(log::LevelFilter::Info);
+    log::set_max_level(log::LevelFilter::from_str(loglevel_string)?);
     Ok(())
 }
 
