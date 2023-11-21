@@ -41,7 +41,7 @@ impl XenstoreSchema for Schema {
 
     #[allow(clippy::useless_format)]
     fn publish_netevent(&mut self, event: &NetEvent) -> io::Result<()> {
-        let iface_id = &event.iface.name;
+        let iface_id = &event.iface.index;
         let xs_iface_prefix = format!("data/net/{iface_id}");
         match &event.op {
             NetEventOp::AddIp(address) => {

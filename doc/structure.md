@@ -229,3 +229,21 @@ data = ""
       ipv6 = ""
         1234000000000000000000004578ABCD = "1234::4578:abcd"
 ```
+
+#### Proposal 3
+
+Interface names are not necessarily stable, as they can be renamed,
+and the OS usually has a non-recycled unique identifier for interfaces
+(an index for POSIX systems, [a GUID for Windows
+systems](https://learn.microsoft.com/en-us/windows/win32/network-interfaces)).
+We could thus use them in the "Proposal 2" schema, which will require
+less bookkeeping in the guest agent, and avoid unnecessary xenstore
+churn:
+
+```
+data = ""
+  net = ""
+    42 = "eth0"
+      mac = ""
+...
+```
