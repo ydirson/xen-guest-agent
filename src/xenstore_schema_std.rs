@@ -111,6 +111,12 @@ impl XenstoreSchema for Schema {
         };
         let xs_iface_prefix = format!("attr/vif/{iface_id}");
         match &event.op {
+            NetEventOp::AddIface => {
+                xs_publish(&self.xs, &format!("{xs_iface_prefix}"), "")?;
+            },
+            NetEventOp::RmIface => {
+                xs_unpublish(&self.xs, &format!("{xs_iface_prefix}"))?;
+            },
             NetEventOp::AddIp(address) => {
                 let key_suffix = self.munged_address(address, &event.iface)?;
                 xs_publish(&self.xs, &format!("{xs_iface_prefix}/{key_suffix}"),

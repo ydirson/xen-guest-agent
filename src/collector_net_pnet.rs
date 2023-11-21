@@ -6,6 +6,7 @@ use pnet_base::MacAddr;
 use std::collections::{HashMap, HashSet, hash_map};
 use std::error::Error;
 use std::io;
+use std::rc::Rc;
 use std::time::Duration;
 
 const IFACE_PERIOD_SECONDS: u64 = 60;
@@ -94,27 +95,34 @@ impl NetworkSource {
                                 cached_iface_index)));
                 },
             };
-            let iface_adresses =
-                if let Some(iface_info) = current_addresses.get(cached_iface_index) {
-                    &iface_info.addresses
-                } else {
-                    &empty_address_set
-                };
-            for disappearing in cached_info.addresses.difference(iface_adresses) {
-                log::trace!("disappearing {}: {:?}", iface.name, disappearing);
-                events.push(NetEvent{iface: iface.clone(),
-                                     op: match disappearing {
-                                         Address::IP(ip) => NetEventOp::RmIp(ip.ip()),
-                                         Address::MAC(mac) => NetEventOp::RmMac((*mac).to_string()),
-                                     }});
-            }
+            // notify addresses or full iface removal
+            match current_addresses.get(cached_iface_index) {
+                Some(iface_info) => {
+                    let iface_adresses = &iface_info.addresses;
+                    for disappearing in cached_info.addresses.difference(iface_adresses) {
+                        log::trace!("disappearing {}: {:?}", iface.name, disappearing);
+                        events.push(NetEvent{
+                            iface: iface.clone(),
+                            op: match disappearing {
+                                Address::IP(ip) => NetEventOp::RmIp(ip.ip()),
+                                Address::MAC(mac) => NetEventOp::RmMac((*mac).to_string()),
+                            }});
+                    }
+                },
+                None => {
+                    events.push(NetEvent{iface: iface.clone(), op: NetEventOp::RmIface});
+                },
+            };
         }
+
         // appearing addresses
         for (iface_index, iface_info) in current_addresses.iter() {
             let iface = self.iface_cache
                 .entry(*iface_index)
                 .or_insert_with_key(|index| {
-                    NetInterface::new(*index, Some(iface_info.name.clone())).into()
+                    let iface = Rc::new(NetInterface::new(*index, Some(iface_info.name.clone())));
+                    events.push(NetEvent{iface: iface.clone(), op: NetEventOp::AddIface});
+                    iface
                 })
                 .clone();
             let cache_adresses =

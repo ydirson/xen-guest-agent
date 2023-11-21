@@ -44,6 +44,12 @@ impl XenstoreSchema for Schema {
         let iface_id = &event.iface.index;
         let xs_iface_prefix = format!("data/net/{iface_id}");
         match &event.op {
+            NetEventOp::AddIface => {
+                xs_publish(&self.xs, &format!("{xs_iface_prefix}"), &event.iface.name)?;
+            },
+            NetEventOp::RmIface => {
+                xs_unpublish(&self.xs, &format!("{xs_iface_prefix}"))?;
+            },
             NetEventOp::AddIp(address) => {
                 let key_suffix = munged_address(address);
                 xs_publish(&self.xs, &format!("{xs_iface_prefix}/{key_suffix}"), "")?;

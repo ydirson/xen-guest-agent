@@ -108,12 +108,15 @@ impl NetworkSource {
             RtnlMessage::NewLink(link_msg) => {
                 let (iface, mac_address) = self.nl_linkmessage_decode(link_msg)?;
                 log::debug!("NewLink({iface:?} {mac_address})");
+                events.push(NetEvent{iface: iface.clone(), op: NetEventOp::AddIface});
                 events.push(NetEvent{iface, op: NetEventOp::AddMac(mac_address)});
             },
             RtnlMessage::DelLink(link_msg) => {
                 let (iface, mac_address) = self.nl_linkmessage_decode(link_msg)?;
                 log::debug!("DelLink({iface:?} {mac_address})");
-                events.push(NetEvent{iface, op: NetEventOp::RmMac(mac_address)});
+                events.push(NetEvent{iface: iface.clone(),
+                                     op: NetEventOp::RmMac(mac_address)}); // redundant
+            events.push(NetEvent{iface, op: NetEventOp::RmIface});
             },
             RtnlMessage::NewAddress(address_msg) => {
                 // FIXME does not distinguish when IP is on DOWN iface

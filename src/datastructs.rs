@@ -58,6 +58,8 @@ pub type NetInterfaceCache = HashMap<u32, Rc<NetInterface>>;
 
 #[derive(Debug)]
 pub enum NetEventOp {
+    AddIface,
+    RmIface,
     AddMac(String),
     RmMac(String),
     AddIp(IpAddr),
