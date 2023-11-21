@@ -103,19 +103,23 @@ fn netevent_from_rtnetlink(nl_msg: &RtnlMessage) -> io::Result<NetEvent> {
     let event = match nl_msg {
         RtnlMessage::NewLink(link_msg) => {
             let (iface, mac_address) = nl_linkmessage_decode(link_msg)?;
+            log::debug!("NewLink({iface:?} {mac_address})");
             NetEvent{iface, op: NetEventOp::AddMac(mac_address)}
         },
         RtnlMessage::DelLink(link_msg) => {
             let (iface, mac_address) = nl_linkmessage_decode(link_msg)?;
+            log::debug!("DelLink({iface:?} {mac_address})");
             NetEvent{iface, op: NetEventOp::RmMac(mac_address)}
         },
         RtnlMessage::NewAddress(address_msg) => {
             // FIXME does not distinguish when IP is on DOWN iface
             let (iface, address) = nl_addressmessage_decode(address_msg)?;
+            log::debug!("NewAddress({iface:?} {address})");
             NetEvent{iface, op: NetEventOp::AddIp(address)}
         },
         RtnlMessage::DelAddress(address_msg) => {
             let (iface, address) = nl_addressmessage_decode(address_msg)?;
+            log::debug!("DelAddress({iface:?} {address})");
             NetEvent{iface, op: NetEventOp::RmIp(address)}
         },
         _ => {

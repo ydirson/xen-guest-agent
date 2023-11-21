@@ -120,8 +120,12 @@ impl XenstoreSchema for Schema {
             },
 
             // FIXME extend IfaceIpStruct for this
-            NetEventOp::AddMac(_mac_address) => {},
-            NetEventOp::RmMac(_mac_address) => {},
+            NetEventOp::AddMac(_mac_address) => {
+                log::debug!("AddMac not applied");
+            },
+            NetEventOp::RmMac(_mac_address) => {
+                log::debug!("RmMac not applied");
+            },
         }
         Ok(())
     }
