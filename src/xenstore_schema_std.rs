@@ -23,7 +23,7 @@ struct IfaceIpStruct {
     v4: IfaceIpList,
     v6: IfaceIpList,
 }
-type IpList = HashMap<String, IfaceIpStruct>;
+type IpList = HashMap<u32, IfaceIpStruct>;
 
 // pseudo version for xe-daemon compatibility, real agent version in
 // BuildVersion below
@@ -136,7 +136,7 @@ impl XenstoreSchema for Schema {
 impl Schema {
     fn munged_address(&mut self, addr: &IpAddr, iface: &NetInterface) -> io::Result<String> {
         let ip_entry = self.ip_addresses
-            .entry(iface.name.clone()) // wtf, need cloning string for a lookup!?
+            .entry(iface.index)
             .or_insert(IfaceIpStruct{v4: [None; NUM_IFACE_IPS], v6: [None; NUM_IFACE_IPS]});
         let ip_list = match addr { IpAddr::V4(_) => &mut ip_entry.v4,
                                    IpAddr::V6(_) => &mut ip_entry.v6 };
