@@ -67,7 +67,7 @@ impl NetworkSource {
         // Handle response
         while let Some(packet) = nl_response.next().await {
             if let NetlinkMessage{payload: NetlinkPayload::InnerMessage(msg), ..} = packet {
-                events.push(self.netevent_from_rtnetlink(&msg)?);
+                events.extend(self.netevent_from_rtnetlink(&msg)?);
             }
         }
 
@@ -83,7 +83,7 @@ impl NetworkSource {
         // Handle response
         while let Some(packet) = nl_response.next().await {
             if let NetlinkMessage{payload: NetlinkPayload::InnerMessage(msg), ..} = packet {
-                events.push(self.netevent_from_rtnetlink(&msg)?);
+                events.extend(self.netevent_from_rtnetlink(&msg)?);
             }
         }
 
@@ -94,41 +94,44 @@ impl NetworkSource {
         try_stream! {
             while let Some((message, _)) = self.messages.next().await {
                 if let NetlinkMessage{payload: NetlinkPayload::InnerMessage(msg), ..} = message {
-                    yield self.netevent_from_rtnetlink(&msg)?;
+                    for event in self.netevent_from_rtnetlink(&msg)? {
+                        yield event;
+                    }
                 }
             };
         }
     }
 
-    fn netevent_from_rtnetlink(&mut self, nl_msg: &RtnlMessage) -> io::Result<NetEvent> {
-        let event = match nl_msg {
+    fn netevent_from_rtnetlink(&mut self, nl_msg: &RtnlMessage) -> io::Result<Vec<NetEvent>> {
+        let mut events = Vec::<NetEvent>::new();
+        match nl_msg {
             RtnlMessage::NewLink(link_msg) => {
                 let (iface, mac_address) = self.nl_linkmessage_decode(link_msg)?;
                 log::debug!("NewLink({iface:?} {mac_address})");
-                NetEvent{iface, op: NetEventOp::AddMac(mac_address)}
+                events.push(NetEvent{iface, op: NetEventOp::AddMac(mac_address)});
             },
             RtnlMessage::DelLink(link_msg) => {
                 let (iface, mac_address) = self.nl_linkmessage_decode(link_msg)?;
                 log::debug!("DelLink({iface:?} {mac_address})");
-                NetEvent{iface, op: NetEventOp::RmMac(mac_address)}
+                events.push(NetEvent{iface, op: NetEventOp::RmMac(mac_address)});
             },
             RtnlMessage::NewAddress(address_msg) => {
                 // FIXME does not distinguish when IP is on DOWN iface
                 let (iface, address) = self.nl_addressmessage_decode(address_msg)?;
                 log::debug!("NewAddress({iface:?} {address})");
-                NetEvent{iface, op: NetEventOp::AddIp(address)}
+                events.push(NetEvent{iface, op: NetEventOp::AddIp(address)});
             },
             RtnlMessage::DelAddress(address_msg) => {
                 let (iface, address) = self.nl_addressmessage_decode(address_msg)?;
                 log::debug!("DelAddress({iface:?} {address})");
-                NetEvent{iface, op: NetEventOp::RmIp(address)}
+                events.push(NetEvent{iface, op: NetEventOp::RmIp(address)});
             },
             _ => {
                 return Err(io::Error::new(io::ErrorKind::InvalidData,
                                           format!("unhandled RtnlMessage: {nl_msg:?}")));
             },
         };
-        Ok(event)
+        Ok(events)
     }
 
     fn nl_linkmessage_decode(&mut self, msg: &LinkMessage) -> io::Result<(Rc<NetInterface>, String)> {
