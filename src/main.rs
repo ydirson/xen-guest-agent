@@ -1,6 +1,4 @@
 mod datastructs;
-#[cfg(unix)]
-mod unix_helpers;
 
 #[cfg_attr(feature = "xenstore", path = "publisher_xenstore.rs")]
 mod publisher;
