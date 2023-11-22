@@ -2,13 +2,21 @@ use crate::datastructs::{NetEvent, ToolstackNetInterface};
 
 // identifies a VIF as named "xn%ID"
 
-pub fn add_vif_info(event: &mut NetEvent) -> () {
+pub fn get_toolstack_interface(iface_name: &str) -> ToolstackNetInterface {
     const PREFIX: &str = "xn";
-    if ! event.iface.name.starts_with(PREFIX) {
-        log::debug!("ignoring interface {} as not starting with '{PREFIX}'", event.iface.name);
-        return;
+    if ! iface_name.starts_with(PREFIX) {
+        log::debug!("ignoring interface {iface_name} as not starting with '{PREFIX}'");
+        return ToolstackNetInterface::None;
     }
-    if let Ok(index) = event.iface.name[PREFIX.len()..].parse() {
-        event.iface.toolstack_iface = ToolstackNetInterface::Vif(index);
+    match iface_name[PREFIX.len()..].parse() {
+        Ok(index) => { return ToolstackNetInterface::Vif(index); },
+        Err(e) => {
+            log::error!("cannot parse a VIF number adter {PREFIX}: {e}");
+            return ToolstackNetInterface::None;
+        },
     }
+}
+
+pub fn add_vif_info(event: &mut NetEvent) -> () {
+    event.iface.toolstack_iface = get_toolstack_interface(&event.iface.name);
 }
