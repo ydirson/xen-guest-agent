@@ -16,6 +16,8 @@ enum Address {
     MAC(MacAddr),
 }
 struct InterfaceInfo {
+    // only needed to keep iface name from pnet data until we know we
+    // have a new NetInterface to construct
     name: String,
     addresses: HashSet<Address>,
 }
