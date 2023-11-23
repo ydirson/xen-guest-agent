@@ -105,7 +105,9 @@ impl XenstoreSchema for Schema {
     fn publish_netevent(&mut self, event: &NetEvent) -> io::Result<()> {
         let iface_id = match event.iface.toolstack_iface {
             ToolstackNetInterface::Vif(id) => id,
-            ToolstackNetInterface::None => return Ok(()),
+            ToolstackNetInterface::None => {
+                panic!("publish_netevent called with no toolstack iface for {:?}", event);
+            },
         };
         let xs_iface_prefix = format!("attr/vif/{iface_id}");
         match &event.op {
