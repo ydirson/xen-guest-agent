@@ -49,7 +49,9 @@ impl NetworkSource {
         for iface in network_interfaces.iter() {
             // KLUDGE: drop ":alias" suffix for Linux interface aliases
             let name = iface.name.split(":").next().unwrap_or(&iface.name);
-            let entry = network_view.entry(name.to_string()).or_insert(HashSet::new());
+            let entry = network_view
+                .entry(name.to_string())
+                .or_insert_with(|| HashSet::new());
             for ip in &iface.ips {
                 entry.insert(Address::IP(*ip));
             }
