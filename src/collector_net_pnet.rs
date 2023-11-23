@@ -26,14 +26,14 @@ impl InterfaceInfo {
     }
 }
 
-type NetworkView = HashMap<u32, InterfaceInfo>;
+type AddressesState = HashMap<u32, InterfaceInfo>;
 pub struct NetworkSource {
-    cache: NetworkView,
+    cache: AddressesState,
 }
 
 impl NetworkSource {
     pub fn new() -> io::Result<NetworkSource> {
-        Ok(NetworkSource {cache: NetworkView::new()})
+        Ok(NetworkSource {cache: AddressesState::new()})
     }
 
     pub async fn collect_current(&mut self) -> Result<Vec<NetEvent>, Box<dyn Error>> {
@@ -57,7 +57,7 @@ impl NetworkSource {
         let network_interfaces = pnet_datalink::interfaces();
 
         // get a full view of interfaces, diffable with the cache
-        let mut network_view: NetworkView = NetworkView::new();
+        let mut network_view = AddressesState::new();
         for iface in network_interfaces.iter() {
             // KLUDGE: drop ":alias" suffix for Linux interface aliases
             let name = iface.name.split(":").next().unwrap_or(&iface.name);
