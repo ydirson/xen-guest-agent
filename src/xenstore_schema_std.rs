@@ -48,7 +48,7 @@ impl XenstoreSchema for Schema {
         xs_publish(&self.xs, "attr/PVAddons/MinorVersion", AGENT_VERSION_MINOR)?;
         xs_publish(&self.xs, "attr/PVAddons/MicroVersion", AGENT_VERSION_MICRO)?;
         let agent_version_build = format!("proto-{}", &env!("CARGO_PKG_VERSION"));
-        xs_publish(&self.xs, "attr/PVAddons/BuildVersion", agent_version_build.as_str())?;
+        xs_publish(&self.xs, "attr/PVAddons/BuildVersion", &agent_version_build)?;
 
         xs_publish(&self.xs, "data/os_distro", &os_info.os_type().to_string())?;
         xs_publish(&self.xs, "data/os_name",
