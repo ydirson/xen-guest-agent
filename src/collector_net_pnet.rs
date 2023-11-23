@@ -28,12 +28,12 @@ impl InterfaceInfo {
 
 type AddressesState = HashMap<u32, InterfaceInfo>;
 pub struct NetworkSource {
-    cache: AddressesState,
+    addresses_cache: AddressesState,
 }
 
 impl NetworkSource {
     pub fn new() -> io::Result<NetworkSource> {
-        Ok(NetworkSource {cache: AddressesState::new()})
+        Ok(NetworkSource {addresses_cache: AddressesState::new()})
     }
 
     pub async fn collect_current(&mut self) -> Result<Vec<NetEvent>, Box<dyn Error>> {
@@ -56,7 +56,7 @@ impl NetworkSource {
     fn get_ifconfig_data(&mut self) -> io::Result<Vec<NetEvent>> {
         let network_interfaces = pnet_datalink::interfaces();
 
-        // get a full view of interfaces, diffable with the cache
+        // get a full view of interfaces, diffable with addresses_cache
         let mut network_view = AddressesState::new();
         for iface in network_interfaces.iter() {
             // KLUDGE: drop ":alias" suffix for Linux interface aliases
@@ -72,7 +72,7 @@ impl NetworkSource {
             }
         }
 
-        // diff cache and view
+        // diff addresses_cache and view
 
         // events to be returned
         let mut events = vec!();
@@ -80,7 +80,7 @@ impl NetworkSource {
         let empty_address_set: HashSet<Address> = HashSet::new();
 
         // disappearing addresses
-        for (cached_iface_index, cached_info) in self.cache.iter() {
+        for (cached_iface_index, cached_info) in self.addresses_cache.iter() {
             let iface = NetInterface { index: *cached_iface_index,
                                        name: cached_info.name.to_string(),
                                        toolstack_iface: ToolstackNetInterface::None,
@@ -107,7 +107,7 @@ impl NetworkSource {
                                        toolstack_iface: ToolstackNetInterface::None,
             };
             let cache_adresses =
-                if let Some(cache_info) = self.cache.get(iface_index) {
+                if let Some(cache_info) = self.addresses_cache.get(iface_index) {
                     &cache_info.addresses
                 } else {
                     &empty_address_set
@@ -124,7 +124,7 @@ impl NetworkSource {
         }
 
         // replace cache with view
-        self.cache = network_view; // FIXME expensive?
+        self.addresses_cache = network_view; // FIXME expensive?
 
         Ok(events)
     }
