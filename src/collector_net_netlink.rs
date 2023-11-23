@@ -107,15 +107,19 @@ impl NetworkSource {
         match nl_msg {
             RtnlMessage::NewLink(link_msg) => {
                 let (iface, mac_address) = self.nl_linkmessage_decode(link_msg)?;
-                log::debug!("NewLink({iface:?} {mac_address})");
+                log::debug!("NewLink({iface:?} {mac_address:?})");
                 events.push(NetEvent{iface: iface.clone(), op: NetEventOp::AddIface});
-                events.push(NetEvent{iface, op: NetEventOp::AddMac(mac_address)});
+                if let Some(mac_address) = mac_address {
+                    events.push(NetEvent{iface, op: NetEventOp::AddMac(mac_address)});
+                }
             },
             RtnlMessage::DelLink(link_msg) => {
                 let (iface, mac_address) = self.nl_linkmessage_decode(link_msg)?;
-                log::debug!("DelLink({iface:?} {mac_address})");
-                events.push(NetEvent{iface: iface.clone(),
-                                     op: NetEventOp::RmMac(mac_address)}); // redundant
+                log::debug!("DelLink({iface:?} {mac_address:?})");
+                if let Some(mac_address) = mac_address {
+                    events.push(NetEvent{iface: iface.clone(),
+                                         op: NetEventOp::RmMac(mac_address)}); // redundant
+                }
             events.push(NetEvent{iface, op: NetEventOp::RmIface});
             },
             RtnlMessage::NewAddress(address_msg) => {
@@ -137,7 +141,8 @@ impl NetworkSource {
         Ok(events)
     }
 
-    fn nl_linkmessage_decode(&mut self, msg: &LinkMessage) -> io::Result<(Rc<NetInterface>, String)> {
+    fn nl_linkmessage_decode(&mut self, msg: &LinkMessage)
+                             -> io::Result<(Rc<NetInterface>, Option<String>)> {
         let LinkMessage{header, nlas, ..} = msg;
 
         // extract fields of interest
@@ -160,10 +165,7 @@ impl NetworkSource {
             .entry(header.index)
             .or_insert_with_key(|index| NetInterface::new(*index, iface_name).into());
 
-        match mac_address {
-            Some(mac_address) => Ok((iface.clone(), mac_address)),
-            None => Ok((iface.clone(), "".to_string())), // FIXME ad-hoc ugly, use Option<String> instead
-        }
+        Ok((iface.clone(), mac_address))
     }
 
     fn nl_addressmessage_decode(&mut self, msg: &AddressMessage) -> io::Result<(Rc<NetInterface>, IpAddr)> {
