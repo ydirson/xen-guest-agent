@@ -57,11 +57,11 @@ impl NetworkSource {
         let network_interfaces = pnet_datalink::interfaces();
 
         // get a full view of interfaces, diffable with addresses_cache
-        let mut network_view = AddressesState::new();
+        let mut current_addresses = AddressesState::new();
         for iface in network_interfaces.iter() {
             // KLUDGE: drop ":alias" suffix for Linux interface aliases
             let name = iface.name.split(":").next().unwrap_or(&iface.name);
-            let entry = network_view
+            let entry = current_addresses
                 .entry(iface.index)
                 .or_insert_with(|| InterfaceInfo::new(name));
             for ip in &iface.ips {
@@ -72,7 +72,7 @@ impl NetworkSource {
             }
         }
 
-        // diff addresses_cache and view
+        // diff addresses_cache and current_addresses view
 
         // events to be returned
         let mut events = vec!();
@@ -86,7 +86,7 @@ impl NetworkSource {
                                        toolstack_iface: ToolstackNetInterface::None,
             };
             let iface_adresses =
-                if let Some(iface_info) = network_view.get(cached_iface_index) {
+                if let Some(iface_info) = current_addresses.get(cached_iface_index) {
                     &iface_info.addresses
                 } else {
                     &empty_address_set
@@ -101,7 +101,7 @@ impl NetworkSource {
             }
         }
         // appearing addresses
-        for (iface_index, iface_info) in network_view.iter() {
+        for (iface_index, iface_info) in current_addresses.iter() {
             let iface = NetInterface { index: *iface_index,
                                        name: iface_info.name.to_string(),
                                        toolstack_iface: ToolstackNetInterface::None,
@@ -124,7 +124,7 @@ impl NetworkSource {
         }
 
         // replace cache with view
-        self.addresses_cache = network_view; // FIXME expensive?
+        self.addresses_cache = current_addresses; // FIXME expensive?
 
         Ok(events)
     }
