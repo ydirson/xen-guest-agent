@@ -103,7 +103,7 @@ impl XenstoreSchema for Schema {
 
     // see https://xenbits.xen.org/docs/unstable/misc/xenstore-paths.html#domain-controlled-paths
     fn publish_netevent(&mut self, event: &NetEvent) -> io::Result<()> {
-        let iface_id = match event.iface.toolstack_iface {
+        let iface_id = match event.iface.borrow().toolstack_iface {
             ToolstackNetInterface::Vif(id) => id,
             ToolstackNetInterface::None => {
                 panic!("publish_netevent called with no toolstack iface for {:?}", event);
@@ -118,12 +118,12 @@ impl XenstoreSchema for Schema {
                 xs_unpublish(&self.xs, &format!("{xs_iface_prefix}"))?;
             },
             NetEventOp::AddIp(address) => {
-                let key_suffix = self.munged_address(address, &event.iface)?;
+                let key_suffix = self.munged_address(address, &event.iface.borrow())?;
                 xs_publish(&self.xs, &format!("{xs_iface_prefix}/{key_suffix}"),
                            &address.to_string())?;
             },
             NetEventOp::RmIp(address) => {
-                let key_suffix = self.munged_address(address, &event.iface)?;
+                let key_suffix = self.munged_address(address, &event.iface.borrow())?;
                 xs_unpublish(&self.xs, &format!("{xs_iface_prefix}/{key_suffix}"))?;
             },
 

@@ -3,6 +3,7 @@ use crate::datastructs::{NetEvent, NetEventOp, NetInterface, NetInterfaceCache};
 use futures::stream::Stream;
 use ipnetwork::IpNetwork;
 use pnet_base::MacAddr;
+use std::cell::RefCell;
 use std::collections::{HashMap, HashSet, hash_map};
 use std::error::Error;
 use std::io;
@@ -100,7 +101,7 @@ impl NetworkSource {
                 Some(iface_info) => {
                     let iface_adresses = &iface_info.addresses;
                     for disappearing in cached_info.addresses.difference(iface_adresses) {
-                        log::trace!("disappearing {}: {:?}", iface.name, disappearing);
+                        log::trace!("disappearing {}: {:?}", iface.borrow().name, disappearing);
                         events.push(NetEvent{
                             iface: iface.clone(),
                             op: match disappearing {
@@ -120,7 +121,8 @@ impl NetworkSource {
             let iface = self.iface_cache
                 .entry(*iface_index)
                 .or_insert_with_key(|index| {
-                    let iface = Rc::new(NetInterface::new(*index, Some(iface_info.name.clone())));
+                    let iface = Rc::new(RefCell::new(
+                        NetInterface::new(*index, Some(iface_info.name.clone()))));
                     events.push(NetEvent{iface: iface.clone(), op: NetEventOp::AddIface});
                     iface
                 })
@@ -132,7 +134,7 @@ impl NetworkSource {
                     &empty_address_set
                 };
             for appearing in iface_info.addresses.difference(cache_adresses) {
-                log::trace!("appearing {}: {:?}", iface.name, appearing);
+                log::trace!("appearing {}: {:?}", iface.borrow().name, appearing);
                 events.push(NetEvent{iface: iface.clone(),
                                      op: match appearing {
                                          Address::IP(ip) => NetEventOp::AddIp(ip.ip()),

@@ -1,3 +1,4 @@
+use std::cell::RefCell;
 use std::collections::HashMap;
 use std::net::IpAddr;
 use std::rc::Rc;
@@ -54,7 +55,8 @@ impl NetInterface {
 // remove interfaces from here once unplugged.  And Rust won't let us
 // use `&'static NetInterface` because we can do the latter, which is
 // good in the end.
-pub type NetInterfaceCache = HashMap<u32, Rc<NetInterface>>;
+// The interface may change name after creation (hence `RefCell`).
+pub type NetInterfaceCache = HashMap<u32, Rc<RefCell<NetInterface>>>;
 
 #[derive(Debug)]
 pub enum NetEventOp {
@@ -68,6 +70,6 @@ pub enum NetEventOp {
 
 #[derive(Debug)]
 pub struct NetEvent {
-    pub iface: Rc<NetInterface>,
+    pub iface: Rc<RefCell<NetInterface>>,
     pub op: NetEventOp,
 }

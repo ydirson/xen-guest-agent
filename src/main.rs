@@ -65,7 +65,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let network_cache = Box::leak(Box::new(NetInterfaceCache::new()));
     let mut collector_net = NetworkSource::new(network_cache)?;
     for event in collector_net.collect_current().await? {
-        if REPORT_INTERNAL_NICS || ! event.iface.toolstack_iface.is_none() {
+        if REPORT_INTERNAL_NICS || ! event.iface.borrow().toolstack_iface.is_none() {
             publisher.publish_netevent(&event)?;
         }
     }
@@ -78,7 +78,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             event = netevent_stream.try_next().fuse() => {
                 match event? {
                     Some(event) => {
-                        if REPORT_INTERNAL_NICS || ! event.iface.toolstack_iface.is_none() {
+                        if REPORT_INTERNAL_NICS || ! event.iface.borrow().toolstack_iface.is_none() {
                             publisher.publish_netevent(&event)?;
                         } else {
                             log::debug!("no toolstack iface in {event:?}");

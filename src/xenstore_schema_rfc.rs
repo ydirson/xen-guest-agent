@@ -41,11 +41,11 @@ impl XenstoreSchema for Schema {
 
     #[allow(clippy::useless_format)]
     fn publish_netevent(&mut self, event: &NetEvent) -> io::Result<()> {
-        let iface_id = &event.iface.index;
+        let iface_id = &event.iface.borrow().index;
         let xs_iface_prefix = format!("data/net/{iface_id}");
         match &event.op {
             NetEventOp::AddIface => {
-                xs_publish(&self.xs, &format!("{xs_iface_prefix}"), &event.iface.name)?;
+                xs_publish(&self.xs, &format!("{xs_iface_prefix}"), &event.iface.borrow().name)?;
             },
             NetEventOp::RmIface => {
                 xs_unpublish(&self.xs, &format!("{xs_iface_prefix}"))?;

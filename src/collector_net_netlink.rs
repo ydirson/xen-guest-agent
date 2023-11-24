@@ -23,6 +23,7 @@ use rtnetlink::constants::{
     RTMGRP_IPV6_IFADDR,
     RTMGRP_LINK,
     };
+use std::cell::RefCell;
 use std::collections::hash_map;
 use std::convert::TryInto;
 use std::error::Error;
@@ -141,8 +142,11 @@ impl NetworkSource {
         Ok(events)
     }
 
-    fn nl_linkmessage_decode(&mut self, msg: &LinkMessage)
-                             -> io::Result<(Rc<NetInterface>, Option<String>)> {
+    fn nl_linkmessage_decode(
+        &mut self, msg: &LinkMessage
+    ) -> io::Result<(Rc<RefCell<NetInterface>>, // ref to the (possibly new) impacted interface
+                     Option<String>,           // MAC address
+    )> {
         let LinkMessage{header, nlas, ..} = msg;
 
         // extract fields of interest
@@ -163,12 +167,15 @@ impl NetworkSource {
 
         let iface = self.iface_cache
             .entry(header.index)
-            .or_insert_with_key(|index| NetInterface::new(*index, iface_name).into());
+            .or_insert_with_key(|index|
+                                RefCell::new(NetInterface::new(*index, iface_name.clone()))
+                                .into());
 
         Ok((iface.clone(), mac_address))
     }
 
-    fn nl_addressmessage_decode(&mut self, msg: &AddressMessage) -> io::Result<(Rc<NetInterface>, IpAddr)> {
+    fn nl_addressmessage_decode(&mut self, msg: &AddressMessage)
+                                -> io::Result<(Rc<RefCell<NetInterface>>, IpAddr)> {
         let AddressMessage{header, nlas, ..} = msg;
 
         // extract fields of interest

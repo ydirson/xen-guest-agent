@@ -29,7 +29,7 @@ impl Publisher {
         Ok(())
     }
     pub fn publish_netevent(&self, event: &NetEvent) -> io::Result<()> {
-        let iface_id = &event.iface.name;
+        let iface_id = &event.iface.borrow().name;
         match &event.op {
             NetEventOp::AddIface => println!("{iface_id} +IFACE"),
             NetEventOp::RmIface => println!("{iface_id} -IFACE"),
