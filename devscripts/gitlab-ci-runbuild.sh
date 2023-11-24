@@ -1,9 +1,10 @@
 #!/bin/sh
 set -e
 
-# all error output to stdout, so shell tracing markers are kept in
-# suitable ordering with collapsable section markers
-exec 2>&1
+# all error output to stderr, so shell tracing markers are kept in
+# suitable ordering with collapsable section markers, *and* with the
+# `Executing` traces issued by gitlab-ci itself
+exec >&2
 
 FOOTER_ID="commit-$(git rev-parse --short HEAD)"
 COLLAPSED_TITLE="$(git log -1 --oneline)"
