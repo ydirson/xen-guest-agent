@@ -171,6 +171,18 @@ impl NetworkSource {
                                 RefCell::new(NetInterface::new(*index, iface_name.clone()))
                                 .into());
 
+        // handle renaming
+        match iface_name {
+            Some(iface_name) => {
+                let iface_renamed = iface.borrow().name != iface_name;
+                if iface_renamed {
+                    log::trace!("name change: {iface:?} now named '{iface_name}'");
+                    iface.borrow_mut().name = iface_name;
+                }
+            },
+            None => {},
+        };
+
         Ok((iface.clone(), mac_address))
     }
 
