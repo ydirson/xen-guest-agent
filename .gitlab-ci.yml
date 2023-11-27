@@ -1,5 +1,6 @@
 stages:
   - build
+  - package
 
 # prevent duplicate pipelines for merge request
 workflow:
@@ -133,3 +134,52 @@ build-latest-linux:
   after_script:
     # show which dependencies changed in Cargo.lock
     - git diff
+
+## packaging from binary artifacts
+
+deb-amd64:
+  stage: package
+  image: "debian:10"
+  needs:
+    - build-release-linux-x86_64
+  before_script:
+    - apt update
+    - apt install -y build-essential debhelper
+    - dpkg-checkbuilddeps
+    - 'VERSION=$(grep "^version =" Cargo.toml | cut -d\" -f2 | tr "-" "~")'
+  script:
+    - >-
+      sed < debian/changelog.in > debian/changelog
+      -e "s/@@VERSION@@/$VERSION/"
+      -e "s/@@AUTHOR@@/$GITLAB_USER_NAME <$GITLAB_USER_EMAIL>/"
+      -e "s/@@DATE@@/$(date --rfc-822)/"
+    - fakeroot debian/rules binary AGENT_BINARY="target/release/xen-guest-agent"
+    - mv -v ../*.deb target/release/
+  artifacts:
+    paths:
+      - target/release/*.deb
+
+rpm-x86_64:
+  stage: package
+  image: "fedora:37"
+  needs:
+    - build-release-linux-x86_64
+  before_script:
+    - dnf install -y rpm-build dnf-utils
+    - mkdir SOURCES
+    - ln -sr target/release/xen-guest-agent SOURCES/
+    - ln -sr startup/xen-guest-agent.service SOURCES/
+    - 'UPSTREAMVERSION=$(grep "^version =" Cargo.toml | cut -d\" -f2)'
+    - 'VERSION=$(echo $UPSTREAMVERSION | tr "-" "~")'
+    - >-
+      sed  < xen-guest-agent.spec.in > xen-guest-agent.spec
+      -e "s/@@UPSTREAMVERSION@@/$UPSTREAMVERSION/"
+      -e "s/@@VERSION@@/$VERSION/"
+      -e "s/@@AUTHOR@@/$GITLAB_USER_NAME <$GITLAB_USER_EMAIL>/"
+      -e "s/@@DATE@@/$(date +"%a %b %d %Y")/"
+    - dnf builddep xen-guest-agent.spec -y
+  script:
+    - 'rpmbuild -bb xen-guest-agent.spec --define "_topdir $(pwd)"'
+  artifacts:
+    paths:
+      - RPMS/*/*.rpm

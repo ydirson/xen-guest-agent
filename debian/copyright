@@ -1,0 +1,30 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Source: https://gitlab.com/xen-project/xen-guest-agent/
+Upstream-Name: xen-guest-agent
+Upstream-Contact: Yann Dirson <yann.dirson@vates.tech>
+
+Files:
+ *
+Copyright:
+ 2023 Vates SAS
+ 2023 Yann Dirson
+License: AGPL-3.0
+
+Files:
+ debian/*
+Copyright:
+ 2023 unknown <user@localhost>
+License: AGPL-3.0
+
+License: AGPL-3.0
+ This program is free software: you can redistribute it and/or modify it under
+ the terms of the GNU Affero General Public License as published by the Free
+ Software Foundation, version 3.
+ .
+ This program is distributed in the hope that it will be useful, but WITHOUT
+ ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more
+ details.
+ .
+ You should have received a copy of the GNU Affero General Public License along
+ with this program. If not, see <https://www.gnu.org/licenses/>.

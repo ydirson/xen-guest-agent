@@ -1,1 +1,5 @@
-/target
+/target/
+/SOURCES/
+/RPMS/
+
+/xen-guest-agent.spec

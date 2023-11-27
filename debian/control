@@ -1,0 +1,21 @@
+Source: xen-guest-agent
+Section: unknown
+Priority: optional
+Maintainer: Yann Dirson <yann.dirson@vates.tech>
+Rules-Requires-Root: no
+Build-Depends:
+ debhelper-compat (= 12),
+Standards-Version: 4.6.2
+Homepage: https://gitlab.com/xen-project/xen-guest-agent/
+
+Package: xen-guest-agent
+Architecture: any
+Depends:
+ ${shlibs:Depends},
+ ${misc:Depends},
+ libxenstore4 | libxenstore3.0,
+Conflicts: xe-guest-utilities
+Replaces: xe-guest-utilities
+Description: Guest Agent for Xen-based virtual machines
+ This agent collects informations about the VM it runs inside of,
+ and makes them avilable to the management toolstack.

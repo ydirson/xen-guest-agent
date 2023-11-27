@@ -1,0 +1,8 @@
+/changelog
+
+/*.substvars
+/files
+/.debhelper/
+/*.debhelper
+
+/xen-guest-agent/
