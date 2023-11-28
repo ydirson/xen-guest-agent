@@ -140,6 +140,8 @@ build-latest-linux:
 deb-amd64:
   stage: package
   image: "debian:10"
+  extends:
+    - .not-scheduled
   needs:
     - build-release-linux-x86_64
   before_script:
@@ -162,6 +164,8 @@ deb-amd64:
 rpm-x86_64:
   stage: package
   image: "fedora:37"
+  extends:
+    - .not-scheduled
   needs:
     - build-release-linux-x86_64
   before_script:
