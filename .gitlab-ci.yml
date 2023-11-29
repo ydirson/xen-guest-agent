@@ -96,10 +96,9 @@ build-linux-everycommit:
     - !reference [.debian-build-template,before_script]
     - printf "\e[0Ksection_end:$(date +%s):before_script[collapsed=true]\r\e[0K\n"
   script:
+    # let git-rebase run the build for each commit
     - git rebase --rebase-merges $CI_MERGE_REQUEST_DIFF_BASE_SHA
-      --exec 'printf "\e[0Ksection_start:$(date +%s):commit-$(git rev-parse --short HEAD)[collapsed=true]\r\e[0K\e[1;33m$(git log -1 --oneline)\e[1;0m\n"'
-      --exec "cargo build ${FEATURES} ${CARGO_FLAGS}"
-      --exec 'printf "\e[0Ksection_end:$(date +%s):commit-$(git rev-parse --short HEAD)\r\e[0K\n"'
+      --exec 'devscripts/gitlab-ci-runbuild.sh cargo build ${FEATURES} ${CARGO_FLAGS}'
 
 build-linux:
   parallel: !reference [.featurematrix,parallel]
