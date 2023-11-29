@@ -94,7 +94,7 @@ build-linux-everycommit:
   before_script:
     - printf "\e[0Ksection_start:$(date +%s):before_script[collapsed=true]\r\e[0K\e[1;33mBuild setup\e[1;0m\n"
     - !reference [.debian-build-template,before_script]
-    - printf "\e[0Ksection_end:$(date +%s):before_script[collapsed=true]\r\e[0K\n"
+    - printf "\e[0Ksection_end:$(date +%s):before_script\r\e[0K\n"
   script:
     # let git-rebase run the build for each commit
     - git rebase --rebase-merges $CI_MERGE_REQUEST_DIFF_BASE_SHA
