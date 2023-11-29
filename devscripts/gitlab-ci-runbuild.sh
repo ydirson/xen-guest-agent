@@ -13,9 +13,23 @@ printf "\e[0Ksection_start:$(date +%s):${FOOTER_ID}[collapsed=true]\r\e[0K\e[1;3
 # trace, but not outside of collapsed section
 set -x
 
-"$@"
+IGNORED_ERROR=0
+if ! "$@"; then
+    ret=$?;
+    case "$(git show --summary --format=format:%s)" in
+        WIP*)
+            IGNORED_ERROR=1
+            ;;
+        *)
+            exit $ret
+            ;;
+    esac
+fi
 
 # stop traces before closing collapsed section
 set +x
 # collapsable footer
 printf "\e[0Ksection_end:$(date +%s):${FOOTER_ID}\r\e[0K\n"
+
+# make any ignored error visible outside of collapsed section
+[ $IGNORED_ERROR = 0 ] || printf "\e[1;31mIgnoring failure for WIP commit\e[1;0m\n"

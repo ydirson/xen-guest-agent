@@ -96,7 +96,10 @@ build-linux-everycommit:
     - !reference [.debian-build-template,before_script]
     - printf "\e[0Ksection_end:$(date +%s):before_script\r\e[0K\n"
   script:
-    # let git-rebase run the build for each commit
+    # let git-rebase run the build for each commit, but not fail with
+    # commit subject starts with "WIP" (gitlab also uses this string
+    # to switch a PR back to draft, mitigating the risk to push a
+    # failing commit)
     - git rebase --rebase-merges $CI_MERGE_REQUEST_DIFF_BASE_SHA
       --exec 'devscripts/gitlab-ci-runbuild.sh cargo build ${FEATURES} ${CARGO_FLAGS}'
 
