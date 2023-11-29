@@ -91,6 +91,10 @@ build-linux-everycommit:
     - .debian-build-template
   variables:
     CARGO_FLAGS: "-v"
+  before_script:
+    - printf "\e[0Ksection_start:$(date +%s):before_script[collapsed=true]\r\e[0K\e[1;33mBuild setup\e[1;0m\n"
+    - !reference [.debian-build-template,before_script]
+    - printf "\e[0Ksection_end:$(date +%s):before_script[collapsed=true]\r\e[0K\n"
   script:
     - git rebase --rebase-merges $CI_MERGE_REQUEST_DIFF_BASE_SHA
       --exec 'printf "\e[0Ksection_start:$(date +%s):commit-$(git rev-parse --short HEAD)[collapsed=true]\r\e[0K\e[1;33m$(git log -1 --oneline)\e[1;0m\n"'
