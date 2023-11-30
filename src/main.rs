@@ -23,7 +23,7 @@ mod vif_detect;
 
 use clap::Parser;
 
-use crate::datastructs::KernelInfo;
+use crate::datastructs::{KernelInfo, NetInterfaceCache};
 use crate::publisher::Publisher;
 use crate::collector_net::NetworkSource;
 use crate::collector_memory::MemorySource;
@@ -64,9 +64,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let mut timer_stream = tokio::time::interval(Duration::from_secs(MEM_PERIOD_SECONDS));
 
     // network events
-    let mut collector_net = NetworkSource::new()?;
-    for mut event in collector_net.collect_current().await? {
-        vif_detect::add_vif_info(&mut event);
+    let network_cache = Box::leak(Box::new(NetInterfaceCache::new()));
+    let mut collector_net = NetworkSource::new(network_cache)?;
+    for event in collector_net.collect_current().await? {
         if REPORT_INTERNAL_NICS || ! event.iface.toolstack_iface.is_none() {
             publisher.publish_netevent(&event)?;
         }
@@ -79,8 +79,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         select! {
             event = netevent_stream.try_next().fuse() => {
                 match event? {
-                    Some(mut event) => {
-                        vif_detect::add_vif_info(&mut event);
+                    Some(event) => {
                         if REPORT_INTERNAL_NICS || ! event.iface.toolstack_iface.is_none() {
                             publisher.publish_netevent(&event)?;
                         } else {

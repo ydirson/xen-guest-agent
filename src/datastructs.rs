@@ -1,4 +1,6 @@
+use std::collections::HashMap;
 use std::net::IpAddr;
+use std::rc::Rc;
 
 pub struct KernelInfo {
     pub release: String,
@@ -30,6 +32,30 @@ pub struct NetInterface {
     pub toolstack_iface: ToolstackNetInterface,
 }
 
+impl NetInterface {
+    pub fn new(index: u32, name: Option<String>) -> NetInterface {
+        let name = match name {
+            Some(string) => { string },
+            None => {
+                log::error!("new interface with index {index} has no name");
+                String::from("") // this is not valid, but user will now be aware
+            },
+        };
+        NetInterface { index,
+                       name: name.clone(),
+                       toolstack_iface: crate::vif_detect::get_toolstack_interface(&name),
+        }
+    }
+}
+
+// The cache of currently-known network interfaces.  We have to use
+// reference counting on the cached items, as we want on one hand to
+// use references to those items from NetEvent, and OTOH we want to
+// remove interfaces from here once unplugged.  And Rust won't let us
+// use `&'static NetInterface` because we can do the latter, which is
+// good in the end.
+pub type NetInterfaceCache = HashMap<u32, Rc<NetInterface>>;
+
 #[derive(Debug)]
 pub enum NetEventOp {
     AddMac(String),
@@ -40,6 +66,6 @@ pub enum NetEventOp {
 
 #[derive(Debug)]
 pub struct NetEvent {
-    pub iface: NetInterface,
+    pub iface: Rc<NetInterface>,
     pub op: NetEventOp,
 }

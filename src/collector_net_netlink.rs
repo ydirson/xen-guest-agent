@@ -1,6 +1,5 @@
 use async_stream::try_stream;
-use crate::datastructs::{NetEvent, NetEventOp, NetInterface, ToolstackNetInterface};
-use crate::unix_helpers::interface_name;
+use crate::datastructs::{NetEvent, NetEventOp, NetInterface, NetInterfaceCache};
 use futures::channel::mpsc::UnboundedReceiver;
 use futures::stream::{Stream, StreamExt};
 use netlink_packet_core::{
@@ -24,19 +23,22 @@ use rtnetlink::constants::{
     RTMGRP_IPV6_IFADDR,
     RTMGRP_LINK,
     };
+use std::collections::hash_map;
 use std::convert::TryInto;
 use std::error::Error;
 use std::io;
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
+use std::rc::Rc;
 use std::vec::Vec;
 
 pub struct NetworkSource {
     handle: netlink_proto::ConnectionHandle<RtnlMessage>,
     messages: UnboundedReceiver<(NetlinkMessage<RtnlMessage>, SocketAddr)>,
+    iface_cache: &'static mut NetInterfaceCache,
 }
 
 impl NetworkSource {
-    pub fn new() -> io::Result<NetworkSource> {
+    pub fn new(iface_cache: &'static mut NetInterfaceCache) -> io::Result<NetworkSource> {
         let (mut connection, handle, messages) = new_connection(NETLINK_ROUTE)?;
         // What kinds of broadcast messages we want to listen for.
         let nl_mgroup_flags = RTMGRP_LINK | RTMGRP_IPV4_IFADDR | RTMGRP_IPV6_IFADDR;
@@ -47,7 +49,7 @@ impl NetworkSource {
             .bind(&nl_addr)
             .expect("failed to bind");
         tokio::spawn(connection);
-        Ok(NetworkSource { handle, messages })
+        Ok(NetworkSource { handle, messages, iface_cache })
     }
 
     pub async fn collect_current(&mut self) -> Result<Vec<NetEvent>, Box<dyn Error>> {
@@ -129,7 +131,7 @@ impl NetworkSource {
         Ok(event)
     }
 
-    fn nl_linkmessage_decode(&mut self, msg: &LinkMessage) -> io::Result<(NetInterface, String)> {
+    fn nl_linkmessage_decode(&mut self, msg: &LinkMessage) -> io::Result<(Rc<NetInterface>, String)> {
         let LinkMessage{header, nlas, ..} = msg;
 
         // extract fields of interest
@@ -148,18 +150,17 @@ impl NetworkSource {
                                             .map(|b| format!("{b:02x}"))
                                             .collect::<Vec<String>>().join(":"));
 
-        let iface = NetInterface { index: header.index,
-                                   name: iface_name.unwrap_or(String::from("")),
-                                   toolstack_iface: ToolstackNetInterface::None,
-        };
+        let iface = self.iface_cache
+            .entry(header.index)
+            .or_insert_with_key(|index| NetInterface::new(*index, iface_name).into());
 
         match mac_address {
-            Some(mac_address) => Ok((iface, mac_address)),
-            None => Ok((iface, "".to_string())), // FIXME ad-hoc ugly, use Option<String> instead
+            Some(mac_address) => Ok((iface.clone(), mac_address)),
+            None => Ok((iface.clone(), "".to_string())), // FIXME ad-hoc ugly, use Option<String> instead
         }
     }
 
-    fn nl_addressmessage_decode(&mut self, msg: &AddressMessage) -> io::Result<(NetInterface, IpAddr)> {
+    fn nl_addressmessage_decode(&mut self, msg: &AddressMessage) -> io::Result<(Rc<NetInterface>, IpAddr)> {
         let AddressMessage{header, nlas, ..} = msg;
 
         // extract fields of interest
@@ -193,15 +194,18 @@ impl NetworkSource {
             _ => None,
         };
 
-        let iface = NetInterface { index: header.index,
-                                   name: interface_name(header.index),
-                                   toolstack_iface: ToolstackNetInterface::None,
+        let iface = match self.iface_cache.entry(header.index) {
+            hash_map::Entry::Occupied(entry) => { entry.get().clone() },
+            hash_map::Entry::Vacant(_) => {
+                return Err(io::Error::new(io::ErrorKind::InvalidData,
+                                          format!("unknown interface for index {}", header.index)));
+            },
         };
 
         match address {
-            Some(address) => Ok((iface, address)),
+            Some(address) => Ok((iface.clone(), address)),
             None => Err(io::Error::new(io::ErrorKind::InvalidData, "unknown address")),
         }
     }
-
 }
+

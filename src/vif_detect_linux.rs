@@ -1,4 +1,4 @@
-use crate::datastructs::{NetEvent, ToolstackNetInterface};
+use crate::datastructs::ToolstackNetInterface;
 use std::fs;
 
 // identifies a VIF from sysfs as devtype="vif", and take the VIF id
@@ -38,8 +38,4 @@ pub fn get_toolstack_interface(iface_name: &str) -> ToolstackNetInterface {
             return ToolstackNetInterface::None;
         },
     }
-}
-
-pub fn add_vif_info(event: &mut NetEvent) {
-    event.iface.toolstack_iface = get_toolstack_interface(&event.iface.name);
 }

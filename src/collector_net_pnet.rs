@@ -1,9 +1,9 @@
 use async_stream::try_stream;
-use crate::datastructs::{NetEvent, NetEventOp, NetInterface, ToolstackNetInterface};
+use crate::datastructs::{NetEvent, NetEventOp, NetInterface, NetInterfaceCache};
 use futures::stream::Stream;
 use ipnetwork::IpNetwork;
 use pnet_base::MacAddr;
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashMap, HashSet, hash_map};
 use std::error::Error;
 use std::io;
 use std::time::Duration;
@@ -29,11 +29,12 @@ impl InterfaceInfo {
 type AddressesState = HashMap<u32, InterfaceInfo>;
 pub struct NetworkSource {
     addresses_cache: AddressesState,
+    iface_cache: &'static mut NetInterfaceCache,
 }
 
 impl NetworkSource {
-    pub fn new() -> io::Result<NetworkSource> {
-        Ok(NetworkSource {addresses_cache: AddressesState::new()})
+    pub fn new(iface_cache: &'static mut NetInterfaceCache) -> io::Result<NetworkSource> {
+        Ok(NetworkSource {addresses_cache: AddressesState::new(), iface_cache})
     }
 
     pub async fn collect_current(&mut self) -> Result<Vec<NetEvent>, Box<dyn Error>> {
@@ -81,9 +82,15 @@ impl NetworkSource {
 
         // disappearing addresses
         for (cached_iface_index, cached_info) in self.addresses_cache.iter() {
-            let iface = NetInterface { index: *cached_iface_index,
-                                       name: cached_info.name.to_string(),
-                                       toolstack_iface: ToolstackNetInterface::None,
+            // iface object from iface_cache
+            let iface = match self.iface_cache.entry(*cached_iface_index) {
+                hash_map::Entry::Occupied(entry) => { entry.get().clone() },
+                hash_map::Entry::Vacant(_) => {
+                    return Err(io::Error::new(
+                        io::ErrorKind::InvalidData,
+                        format!("disappearing interface with index {} not in iface_cache",
+                                cached_iface_index)));
+                },
             };
             let iface_adresses =
                 if let Some(iface_info) = current_addresses.get(cached_iface_index) {
@@ -102,10 +109,12 @@ impl NetworkSource {
         }
         // appearing addresses
         for (iface_index, iface_info) in current_addresses.iter() {
-            let iface = NetInterface { index: *iface_index,
-                                       name: iface_info.name.to_string(),
-                                       toolstack_iface: ToolstackNetInterface::None,
-            };
+            let iface = self.iface_cache
+                .entry(*iface_index)
+                .or_insert_with_key(|index| {
+                    NetInterface::new(*index, Some(iface_info.name.clone())).into()
+                })
+                .clone();
             let cache_adresses =
                 if let Some(cache_info) = self.addresses_cache.get(iface_index) {
                     &cache_info.addresses

@@ -1,4 +1,4 @@
-use crate::datastructs::NetEvent;
+use crate::datastructs::{NetEvent, NetInterfaceCache};
 use futures::stream::Stream;
 use std::error::Error;
 use std::io;
@@ -7,7 +7,7 @@ pub struct NetworkSource {
 }
 
 impl NetworkSource {
-    pub fn new() -> io::Result<NetworkSource> {
+    pub fn new(_cache: &'static mut NetInterfaceCache) -> io::Result<NetworkSource> {
         Ok(NetworkSource {})
     }
 
