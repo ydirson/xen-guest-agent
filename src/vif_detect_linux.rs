@@ -11,11 +11,17 @@ pub fn add_vif_info(event: &mut NetEvent) {
     let device_path = format!("/sys/class/net/{}/device", event.iface.name);
     if let Ok(devtype) = fs::read_to_string(format!("{device_path}/devtype")) {
         let devtype = devtype.trim();
-        if devtype != "vif" { return; }
+        if devtype != "vif" {
+            log::debug!("ignoring device {device_path}, devtype {devtype:?} not 'vif'");
+            return;
+        }
         if let Ok(nodename) = fs::read_to_string(format!("{device_path}/nodename")) {
             let nodename = nodename.trim();
             const PREFIX: &str = "device/vif/";
-            if ! nodename.starts_with(PREFIX) { return; } // FIXME warn?
+            if ! nodename.starts_with(PREFIX) {
+                log::debug!("ignoring interface {nodename} as not under {PREFIX}");
+                return;
+            }
             let vif_id = nodename[PREFIX.len()..].parse().unwrap();
             event.iface.toolstack_iface = ToolstackNetInterface::Vif(vif_id);
         }

@@ -83,6 +83,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
                         vif_detect::add_vif_info(&mut event);
                         if REPORT_INTERNAL_NICS || ! event.iface.toolstack_iface.is_none() {
                             publisher.publish_netevent(&event)?;
+                        } else {
+                            log::debug!("no toolstack iface in {event:?}");
                         }
                     },
                     // FIXME can't we handle those in `select!` directly?

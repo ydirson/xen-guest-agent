@@ -48,7 +48,7 @@ impl XenstoreSchema for Schema {
         xs_publish(&self.xs, "attr/PVAddons/MinorVersion", AGENT_VERSION_MINOR)?;
         xs_publish(&self.xs, "attr/PVAddons/MicroVersion", AGENT_VERSION_MICRO)?;
         let agent_version_build = format!("proto-{}", &env!("CARGO_PKG_VERSION"));
-        xs_publish(&self.xs, "attr/PVAddons/BuildVersion", agent_version_build.as_str())?;
+        xs_publish(&self.xs, "attr/PVAddons/BuildVersion", &agent_version_build)?;
 
         xs_publish(&self.xs, "data/os_distro", &os_info.os_type().to_string())?;
         xs_publish(&self.xs, "data/os_name",
@@ -105,7 +105,9 @@ impl XenstoreSchema for Schema {
     fn publish_netevent(&mut self, event: &NetEvent) -> io::Result<()> {
         let iface_id = match event.iface.toolstack_iface {
             ToolstackNetInterface::Vif(id) => id,
-            ToolstackNetInterface::None => return Ok(()),
+            ToolstackNetInterface::None => {
+                panic!("publish_netevent called with no toolstack iface for {:?}", event);
+            },
         };
         let xs_iface_prefix = format!("attr/vif/{iface_id}");
         match &event.op {
@@ -120,8 +122,12 @@ impl XenstoreSchema for Schema {
             },
 
             // FIXME extend IfaceIpStruct for this
-            NetEventOp::AddMac(_mac_address) => {},
-            NetEventOp::RmMac(_mac_address) => {},
+            NetEventOp::AddMac(_mac_address) => {
+                log::debug!("AddMac not applied");
+            },
+            NetEventOp::RmMac(_mac_address) => {
+                log::debug!("RmMac not applied");
+            },
         }
         Ok(())
     }

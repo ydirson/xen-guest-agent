@@ -64,7 +64,6 @@ impl NetworkSource {
         let mut nl_response = self.handle.request(nl_msg, SocketAddr::new(0, 0))?;
         // Handle response
         while let Some(packet) = nl_response.next().await {
-            log::trace!("<<< {:?}", packet);
             if let NetlinkMessage{payload: NetlinkPayload::InnerMessage(msg), ..} = packet {
                 events.push(netevent_from_rtnetlink(&msg)?);
             }
@@ -81,7 +80,6 @@ impl NetworkSource {
         let mut nl_response = self.handle.request(nl_msg, SocketAddr::new(0, 0))?;
         // Handle response
         while let Some(packet) = nl_response.next().await {
-            log::trace!("<<< {:?}", packet);
             if let NetlinkMessage{payload: NetlinkPayload::InnerMessage(msg), ..} = packet {
                 events.push(netevent_from_rtnetlink(&msg)?);
             }
@@ -93,7 +91,6 @@ impl NetworkSource {
     pub fn stream(&mut self) -> impl Stream<Item = io::Result<NetEvent>> + '_ {
         try_stream! {
             while let Some((message, _)) = self.messages.next().await {
-                log::trace!("rtnetlink change message - {message:?}");
                 if let NetlinkMessage{payload: NetlinkPayload::InnerMessage(msg), ..} = message {
                     yield netevent_from_rtnetlink(&msg)?;
                 }
@@ -106,19 +103,23 @@ fn netevent_from_rtnetlink(nl_msg: &RtnlMessage) -> io::Result<NetEvent> {
     let event = match nl_msg {
         RtnlMessage::NewLink(link_msg) => {
             let (iface, mac_address) = nl_linkmessage_decode(link_msg)?;
+            log::debug!("NewLink({iface:?} {mac_address})");
             NetEvent{iface, op: NetEventOp::AddMac(mac_address)}
         },
         RtnlMessage::DelLink(link_msg) => {
             let (iface, mac_address) = nl_linkmessage_decode(link_msg)?;
+            log::debug!("DelLink({iface:?} {mac_address})");
             NetEvent{iface, op: NetEventOp::RmMac(mac_address)}
         },
         RtnlMessage::NewAddress(address_msg) => {
             // FIXME does not distinguish when IP is on DOWN iface
             let (iface, address) = nl_addressmessage_decode(address_msg)?;
+            log::debug!("NewAddress({iface:?} {address})");
             NetEvent{iface, op: NetEventOp::AddIp(address)}
         },
         RtnlMessage::DelAddress(address_msg) => {
             let (iface, address) = nl_addressmessage_decode(address_msg)?;
+            log::debug!("DelAddress({iface:?} {address})");
             NetEvent{iface, op: NetEventOp::RmIp(address)}
         },
         _ => {
@@ -131,7 +132,6 @@ fn netevent_from_rtnetlink(nl_msg: &RtnlMessage) -> io::Result<NetEvent> {
 
 fn nl_linkmessage_decode(msg: &LinkMessage) -> io::Result<(NetInterface, String)> {
     let LinkMessage{header, nlas, ..} = msg;
-    log::trace!("{header:?} {nlas:?}");
 
     // extract fields of interest
     let mut address_bytes: Option<&Vec<u8>> = None;
@@ -158,7 +158,6 @@ fn nl_linkmessage_decode(msg: &LinkMessage) -> io::Result<(NetInterface, String)
 
 fn nl_addressmessage_decode(msg: &AddressMessage) -> io::Result<(NetInterface, IpAddr)> {
     let AddressMessage{header, nlas, ..} = msg;
-    log::trace!("{header:?} {nlas:?}");
 
     // extract fields of interest
     let mut address_bytes: Option<&Vec<u8>> = None;

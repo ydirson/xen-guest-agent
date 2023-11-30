@@ -35,9 +35,6 @@ impl Publisher {
             NetEventOp::RmIp(address) => println!("{iface_id} -IP  {address}"),
             NetEventOp::AddMac(mac_address) => println!("{iface_id} +MAC {mac_address}"),
             NetEventOp::RmMac(mac_address) => println!("{iface_id} -MAC {mac_address}"),
-            _ =>
-                return Err(io::Error::new(io::ErrorKind::InvalidData,
-                                          format!("unhandled NetEvent: {event:?}"))),
         }
         Ok(())
     }
