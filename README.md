@@ -93,9 +93,29 @@ RUSTFLAGS=-L/usr/local/lib
 
 ### How to run
 
-The only way to tune the behavior currently is by using environment
-variables:
+The behavior can be adjusted by a few command-line options and
+environment variables.
 
+#### Command-Line
+
+* `-s`, `--stderr`: send logs to stderr instead of going to the system
+  logger. Note that the only system logger currently available is
+  `syslog`, used on Unix platforms.  On other platfoms already write
+  to stderr so this option on those systems is a no-op.
+* `-l <LOGLEVEL>`, `--loglevel=<LOGLEVEL>`: selects the highest level
+  of details to print.  Only affects stderr logging, and affects all
+  libraries used by this program, see `RUST_LOG` below for a better
+  option.
+
+#### Environment
+
+* `RUST_LOG`: logging to `stderr` uses the `env_logger` crate, see
+  [its documentation](https://docs.rs/env_logger/latest/env_logger/)
+  for full details.  Example useful values:
+  * `RUST_LOG=info,xen_guest_agent::publisher=trace`: log every change
+    to data published to xenstore
+  * `RUST_LOG=warn,netlink_proto::codecs=trace,xen_guest_agent=trace`:
+    get insight into data read from Netlink and what we're doing with them
 * `XENSTORE_SCHEMA`: select the schema to use for publishing of data in Xenstore.
   Possible values:
   * `std`: (default value) network info according to [the xenstore-path
