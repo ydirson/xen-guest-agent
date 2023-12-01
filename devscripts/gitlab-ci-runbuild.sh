@@ -15,8 +15,10 @@ printf "\e[0Ksection_start:$(date +%s):${FOOTER_ID}[collapsed=true]\r\e[0K\e[1;3
 set -x
 
 IGNORED_ERROR=0
-if ! "$@"; then
-    ret=$?;
+if "$@" ; then
+    : no error, just go on
+else
+    ret=$?
     case "$(git show --summary --format=format:%s)" in
         WIP*)
             IGNORED_ERROR=1
