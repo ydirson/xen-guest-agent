@@ -1,6 +1,7 @@
 stages:
   - setup
-  - build
+  - check
+  - release-build
   - package
   - deploy
 
@@ -18,7 +19,7 @@ variables:
   PKG_ROOT: "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic"
 
 .build-template:
-  stage: build
+  stage: check
   script:
     - cargo build ${FEATURES} ${CARGO_FLAGS}
 
@@ -176,6 +177,7 @@ build-linux:
     - !reference [.not-scheduled,rules]
 
 build-release-linux-x86_64:
+  stage: release-build
   extends:
     - .debian-build-template
     - .not-scheduled
@@ -195,6 +197,7 @@ build-freebsd13-x86_64:
     CARGO_FLAGS: "-v"
 
 build-release-freebsd13-x86_64:
+  stage: release-build
   extends:
     - .cross-freebsd13-x86_64-build-template
     - .not-scheduled
