@@ -23,7 +23,7 @@ struct IfaceIpStruct {
     v4: IfaceIpList,
     v6: IfaceIpList,
 }
-type IpList = HashMap<String, IfaceIpStruct>;
+type IpList = HashMap<u32, IfaceIpStruct>;
 
 // pseudo version for xe-daemon compatibility, real agent version in
 // BuildVersion below
@@ -103,7 +103,7 @@ impl XenstoreSchema for Schema {
 
     // see https://xenbits.xen.org/docs/unstable/misc/xenstore-paths.html#domain-controlled-paths
     fn publish_netevent(&mut self, event: &NetEvent) -> io::Result<()> {
-        let iface_id = match event.iface.toolstack_iface {
+        let iface_id = match event.iface.borrow().toolstack_iface {
             ToolstackNetInterface::Vif(id) => id,
             ToolstackNetInterface::None => {
                 panic!("publish_netevent called with no toolstack iface for {:?}", event);
@@ -111,13 +111,19 @@ impl XenstoreSchema for Schema {
         };
         let xs_iface_prefix = format!("attr/vif/{iface_id}");
         match &event.op {
+            NetEventOp::AddIface => {
+                xs_publish(&self.xs, &format!("{xs_iface_prefix}"), "")?;
+            },
+            NetEventOp::RmIface => {
+                xs_unpublish(&self.xs, &format!("{xs_iface_prefix}"))?;
+            },
             NetEventOp::AddIp(address) => {
-                let key_suffix = self.munged_address(address, &event.iface)?;
+                let key_suffix = self.munged_address(address, &event.iface.borrow())?;
                 xs_publish(&self.xs, &format!("{xs_iface_prefix}/{key_suffix}"),
                            &address.to_string())?;
             },
             NetEventOp::RmIp(address) => {
-                let key_suffix = self.munged_address(address, &event.iface)?;
+                let key_suffix = self.munged_address(address, &event.iface.borrow())?;
                 xs_unpublish(&self.xs, &format!("{xs_iface_prefix}/{key_suffix}"))?;
             },
 
@@ -136,7 +142,7 @@ impl XenstoreSchema for Schema {
 impl Schema {
     fn munged_address(&mut self, addr: &IpAddr, iface: &NetInterface) -> io::Result<String> {
         let ip_entry = self.ip_addresses
-            .entry(iface.name.clone()) // wtf, need cloning string for a lookup!?
+            .entry(iface.index)
             .or_insert(IfaceIpStruct{v4: [None; NUM_IFACE_IPS], v6: [None; NUM_IFACE_IPS]});
         let ip_list = match addr { IpAddr::V4(_) => &mut ip_entry.v4,
                                    IpAddr::V6(_) => &mut ip_entry.v6 };

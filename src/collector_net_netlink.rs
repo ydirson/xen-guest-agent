@@ -1,6 +1,5 @@
 use async_stream::try_stream;
-use crate::datastructs::{NetEvent, NetEventOp, NetInterface, ToolstackNetInterface};
-use crate::unix_helpers::interface_name;
+use crate::datastructs::{NetEvent, NetEventOp, NetInterface, NetInterfaceCache};
 use futures::channel::mpsc::UnboundedReceiver;
 use futures::stream::{Stream, StreamExt};
 use netlink_packet_core::{
@@ -24,19 +23,23 @@ use rtnetlink::constants::{
     RTMGRP_IPV6_IFADDR,
     RTMGRP_LINK,
     };
+use std::cell::RefCell;
+use std::collections::hash_map;
 use std::convert::TryInto;
 use std::error::Error;
 use std::io;
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
+use std::rc::Rc;
 use std::vec::Vec;
 
 pub struct NetworkSource {
     handle: netlink_proto::ConnectionHandle<RtnlMessage>,
     messages: UnboundedReceiver<(NetlinkMessage<RtnlMessage>, SocketAddr)>,
+    iface_cache: &'static mut NetInterfaceCache,
 }
 
 impl NetworkSource {
-    pub fn new() -> io::Result<NetworkSource> {
+    pub fn new(iface_cache: &'static mut NetInterfaceCache) -> io::Result<NetworkSource> {
         let (mut connection, handle, messages) = new_connection(NETLINK_ROUTE)?;
         // What kinds of broadcast messages we want to listen for.
         let nl_mgroup_flags = RTMGRP_LINK | RTMGRP_IPV4_IFADDR | RTMGRP_IPV6_IFADDR;
@@ -47,7 +50,7 @@ impl NetworkSource {
             .bind(&nl_addr)
             .expect("failed to bind");
         tokio::spawn(connection);
-        Ok(NetworkSource { handle, messages })
+        Ok(NetworkSource { handle, messages, iface_cache })
     }
 
     pub async fn collect_current(&mut self) -> Result<Vec<NetEvent>, Box<dyn Error>> {
@@ -65,7 +68,7 @@ impl NetworkSource {
         // Handle response
         while let Some(packet) = nl_response.next().await {
             if let NetlinkMessage{payload: NetlinkPayload::InnerMessage(msg), ..} = packet {
-                events.push(netevent_from_rtnetlink(&msg)?);
+                events.extend(self.netevent_from_rtnetlink(&msg)?);
             }
         }
 
@@ -81,7 +84,7 @@ impl NetworkSource {
         // Handle response
         while let Some(packet) = nl_response.next().await {
             if let NetlinkMessage{payload: NetlinkPayload::InnerMessage(msg), ..} = packet {
-                events.push(netevent_from_rtnetlink(&msg)?);
+                events.extend(self.netevent_from_rtnetlink(&msg)?);
             }
         }
 
@@ -92,111 +95,144 @@ impl NetworkSource {
         try_stream! {
             while let Some((message, _)) = self.messages.next().await {
                 if let NetlinkMessage{payload: NetlinkPayload::InnerMessage(msg), ..} = message {
-                    yield netevent_from_rtnetlink(&msg)?;
+                    for event in self.netevent_from_rtnetlink(&msg)? {
+                        yield event;
+                    }
                 }
             };
         }
     }
-}
 
-fn netevent_from_rtnetlink(nl_msg: &RtnlMessage) -> io::Result<NetEvent> {
-    let event = match nl_msg {
-        RtnlMessage::NewLink(link_msg) => {
-            let (iface, mac_address) = nl_linkmessage_decode(link_msg)?;
-            log::debug!("NewLink({iface:?} {mac_address})");
-            NetEvent{iface, op: NetEventOp::AddMac(mac_address)}
-        },
-        RtnlMessage::DelLink(link_msg) => {
-            let (iface, mac_address) = nl_linkmessage_decode(link_msg)?;
-            log::debug!("DelLink({iface:?} {mac_address})");
-            NetEvent{iface, op: NetEventOp::RmMac(mac_address)}
-        },
-        RtnlMessage::NewAddress(address_msg) => {
-            // FIXME does not distinguish when IP is on DOWN iface
-            let (iface, address) = nl_addressmessage_decode(address_msg)?;
-            log::debug!("NewAddress({iface:?} {address})");
-            NetEvent{iface, op: NetEventOp::AddIp(address)}
-        },
-        RtnlMessage::DelAddress(address_msg) => {
-            let (iface, address) = nl_addressmessage_decode(address_msg)?;
-            log::debug!("DelAddress({iface:?} {address})");
-            NetEvent{iface, op: NetEventOp::RmIp(address)}
-        },
-        _ => {
-            return Err(io::Error::new(io::ErrorKind::InvalidData,
-                                      format!("unhandled RtnlMessage: {nl_msg:?}")));
-        },
-    };
-    Ok(event)
-}
+    fn netevent_from_rtnetlink(&mut self, nl_msg: &RtnlMessage) -> io::Result<Vec<NetEvent>> {
+        let mut events = Vec::<NetEvent>::new();
+        match nl_msg {
+            RtnlMessage::NewLink(link_msg) => {
+                let (iface, mac_address) = self.nl_linkmessage_decode(link_msg)?;
+                log::debug!("NewLink({iface:?} {mac_address:?})");
+                events.push(NetEvent{iface: iface.clone(), op: NetEventOp::AddIface});
+                if let Some(mac_address) = mac_address {
+                    events.push(NetEvent{iface, op: NetEventOp::AddMac(mac_address)});
+                }
+            },
+            RtnlMessage::DelLink(link_msg) => {
+                let (iface, mac_address) = self.nl_linkmessage_decode(link_msg)?;
+                log::debug!("DelLink({iface:?} {mac_address:?})");
+                if let Some(mac_address) = mac_address {
+                    events.push(NetEvent{iface: iface.clone(),
+                                         op: NetEventOp::RmMac(mac_address)}); // redundant
+                }
+            events.push(NetEvent{iface, op: NetEventOp::RmIface});
+            },
+            RtnlMessage::NewAddress(address_msg) => {
+                // FIXME does not distinguish when IP is on DOWN iface
+                let (iface, address) = self.nl_addressmessage_decode(address_msg)?;
+                log::debug!("NewAddress({iface:?} {address})");
+                events.push(NetEvent{iface, op: NetEventOp::AddIp(address)});
+            },
+            RtnlMessage::DelAddress(address_msg) => {
+                let (iface, address) = self.nl_addressmessage_decode(address_msg)?;
+                log::debug!("DelAddress({iface:?} {address})");
+                events.push(NetEvent{iface, op: NetEventOp::RmIp(address)});
+            },
+            _ => {
+                return Err(io::Error::new(io::ErrorKind::InvalidData,
+                                          format!("unhandled RtnlMessage: {nl_msg:?}")));
+            },
+        };
+        Ok(events)
+    }
 
-fn nl_linkmessage_decode(msg: &LinkMessage) -> io::Result<(NetInterface, String)> {
-    let LinkMessage{header, nlas, ..} = msg;
+    fn nl_linkmessage_decode(
+        &mut self, msg: &LinkMessage
+    ) -> io::Result<(Rc<RefCell<NetInterface>>, // ref to the (possibly new) impacted interface
+                     Option<String>,           // MAC address
+    )> {
+        let LinkMessage{header, nlas, ..} = msg;
 
-    // extract fields of interest
-    let mut address_bytes: Option<&Vec<u8>> = None;
-    for nla in nlas {
-        if let link::nlas::Nla::Address(addr) = nla {
-            address_bytes = Some(addr);
+        // extract fields of interest
+        let mut iface_name: Option<String> = None;
+        let mut address_bytes: Option<&Vec<u8>> = None;
+        for nla in nlas {
+            if let link::nlas::Nla::IfName(name) = nla {
+                iface_name = Some(name.to_string());
+            }
+            if let link::nlas::Nla::Address(addr) = nla {
+                address_bytes = Some(addr);
+            }
+        }
+        // make sure message contains an address
+        let mac_address = address_bytes.map(|address_bytes| address_bytes.iter()
+                                            .map(|b| format!("{b:02x}"))
+                                            .collect::<Vec<String>>().join(":"));
+
+        let iface = self.iface_cache
+            .entry(header.index)
+            .or_insert_with_key(|index|
+                                RefCell::new(NetInterface::new(*index, iface_name.clone()))
+                                .into());
+
+        // handle renaming
+        match iface_name {
+            Some(iface_name) => {
+                let iface_renamed = iface.borrow().name != iface_name;
+                if iface_renamed {
+                    log::trace!("name change: {iface:?} now named '{iface_name}'");
+                    iface.borrow_mut().name = iface_name;
+                }
+            },
+            None => {},
+        };
+
+        Ok((iface.clone(), mac_address))
+    }
+
+    fn nl_addressmessage_decode(&mut self, msg: &AddressMessage)
+                                -> io::Result<(Rc<RefCell<NetInterface>>, IpAddr)> {
+        let AddressMessage{header, nlas, ..} = msg;
+
+        // extract fields of interest
+        let mut address_bytes: Option<&Vec<u8>> = None;
+        for nla in nlas {
+            if let address::nlas::Nla::Address(addr) = nla {
+                address_bytes = Some(addr);
+                break;
+            }
+        }
+
+        let address = match header.family {
+            // PF_INET
+            2  => match address_bytes {
+                Some(address_bytes) => {
+                    let address_array: [u8; 4] = address_bytes[..].try_into()
+                        .expect("IPv4 with incorrect length");
+                    Some(IpAddr::V4(Ipv4Addr::from(address_array)))
+                },
+                None => None,
+            },
+            // PF_INET6
+            10 => match address_bytes {
+                Some(address_bytes) => {
+                    let address_array: [u8; 16] = address_bytes[..].try_into()
+                        .expect("IPv6 with incorrect length");
+                    Some(IpAddr::V6(Ipv6Addr::from(address_array)))
+                },
+                None => None,
+            },
+            _ => None,
+        };
+
+        let iface = match self.iface_cache.entry(header.index) {
+            hash_map::Entry::Occupied(entry) => { entry.get().clone() },
+            hash_map::Entry::Vacant(_) => {
+                return Err(io::Error::new(io::ErrorKind::InvalidData,
+                                          format!("unknown interface for index {}", header.index)));
+            },
+        };
+
+        match address {
+            Some(address) => Ok((iface.clone(), address)),
+            None => Err(io::Error::new(io::ErrorKind::InvalidData, "unknown address")),
         }
     }
-    // make sure message contains an address
-    let mac_address = address_bytes.map(|address_bytes| address_bytes.iter()
-                                        .map(|b| format!("{b:02x}"))
-                                        .collect::<Vec<String>>().join(":"));
-
-    let iface = NetInterface { index: header.index,
-                               name: interface_name(header.index),
-                               toolstack_iface: ToolstackNetInterface::None,
-    };
-
-    match mac_address {
-        Some(mac_address) => Ok((iface, mac_address)),
-        None => Ok((iface, "".to_string())), // FIXME ad-hoc ugly, use Option<String> instead
-    }
 }
 
-fn nl_addressmessage_decode(msg: &AddressMessage) -> io::Result<(NetInterface, IpAddr)> {
-    let AddressMessage{header, nlas, ..} = msg;
-
-    // extract fields of interest
-    let mut address_bytes: Option<&Vec<u8>> = None;
-    for nla in nlas {
-        if let address::nlas::Nla::Address(addr) = nla {
-            address_bytes = Some(addr);
-            break;
-        }
-    }
-
-    let address = match header.family {
-        // PF_INET
-        2  => match address_bytes {
-            Some(address_bytes) => {
-                let address_array: [u8; 4] = address_bytes[..].try_into()
-                    .expect("IPv4 with incorrect length");
-                Some(IpAddr::V4(Ipv4Addr::from(address_array)))
-            },
-            None => None,
-        },
-        // PF_INET6
-        10 => match address_bytes {
-            Some(address_bytes) => {
-                let address_array: [u8; 16] = address_bytes[..].try_into()
-                    .expect("IPv6 with incorrect length");
-                Some(IpAddr::V6(Ipv6Addr::from(address_array)))
-            },
-            None => None,
-        },
-        _ => None,
-    };
-
-    let iface = NetInterface { index: header.index,
-                               name: interface_name(header.index),
-                               toolstack_iface: ToolstackNetInterface::None,
-    };
-
-    match address {
-        Some(address) => Ok((iface, address)),
-        None => Err(io::Error::new(io::ErrorKind::InvalidData, "unknown address")),
-    }
-}

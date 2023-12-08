@@ -1,4 +1,4 @@
-use crate::datastructs::{NetEvent, ToolstackNetInterface};
+use crate::datastructs::ToolstackNetInterface;
 use std::fs;
 
 // identifies a VIF from sysfs as devtype="vif", and take the VIF id
@@ -6,24 +6,36 @@ use std::fs;
 
 // FIXME does not attempt to detect sr-iov VIFs
 
-pub fn add_vif_info(event: &mut NetEvent) {
+pub fn get_toolstack_interface(iface_name: &str) -> ToolstackNetInterface {
     // FIXME: using ETHTOOL ioctl could be better
-    let device_path = format!("/sys/class/net/{}/device", event.iface.name);
-    if let Ok(devtype) = fs::read_to_string(format!("{device_path}/devtype")) {
-        let devtype = devtype.trim();
-        if devtype != "vif" {
-            log::debug!("ignoring device {device_path}, devtype {devtype:?} not 'vif'");
-            return;
-        }
-        if let Ok(nodename) = fs::read_to_string(format!("{device_path}/nodename")) {
-            let nodename = nodename.trim();
-            const PREFIX: &str = "device/vif/";
-            if ! nodename.starts_with(PREFIX) {
-                log::debug!("ignoring interface {nodename} as not under {PREFIX}");
-                return;
+    let device_path = format!("/sys/class/net/{}/device", iface_name);
+    match fs::read_to_string(format!("{device_path}/devtype")) {
+        Ok(devtype) => {
+            let devtype = devtype.trim();
+            if devtype != "vif" {
+                log::debug!("ignoring device {device_path}, devtype {devtype:?} not 'vif'");
+                return ToolstackNetInterface::None;
             }
-            let vif_id = nodename[PREFIX.len()..].parse().unwrap();
-            event.iface.toolstack_iface = ToolstackNetInterface::Vif(vif_id);
-        }
+            match fs::read_to_string(format!("{device_path}/nodename")) {
+                Ok(nodename) => {
+                    let nodename = nodename.trim();
+                    const PREFIX: &str = "device/vif/";
+                    if ! nodename.starts_with(PREFIX) {
+                        log::debug!("ignoring interface {nodename} as not under {PREFIX}");
+                        return ToolstackNetInterface::None;
+                    }
+                    let vif_id = nodename[PREFIX.len()..].parse().unwrap();
+                    return ToolstackNetInterface::Vif(vif_id);
+                },
+                Err(e) => {
+                    log::error!("reading {device_path}/nodename: {e}");
+                    return ToolstackNetInterface::None;
+                },
+            }
+        },
+        Err(e) => {
+            log::debug!("reading {device_path}/devtype: {e}");
+            return ToolstackNetInterface::None;
+        },
     }
 }
