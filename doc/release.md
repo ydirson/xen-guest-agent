@@ -16,12 +16,14 @@ outputs:
 operations:
 - check with `cargo outdated` not to miss any outdated dependency
 - update version in `Cargo.toml`
+- set release date in `CHANGELOG.md`, add link to prospective URL for Gitlab release
 - run `cargo tree` (or any cargo command updating the version in `Cargo.lock`
 - `git commit Cargo.toml Cargo.lock -m "Release $VERSION"`
 - `git tag $VERSION -m $VERSION`
 - `cargo package`
 - `mv target/package/xen-guest-agent-$VERSION.crate ../xen-guest-agent-$VERSION.tar.gz`
 - update version in Cargo.toml to $NEXTVERSION-dev
+- create new entry for $NEXTVERSION in `CHANGELOG.md`
 
 ## binary artifacts
 
