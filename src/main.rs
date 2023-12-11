@@ -104,7 +104,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
 #[derive(clap::Parser)]
 struct Cli {
-    /// Print2 logs to stderr instead of system logs
+    /// Print logs to stderr instead of system logs
     #[arg(short, long)]
     stderr: bool,
 
