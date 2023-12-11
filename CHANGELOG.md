@@ -20,6 +20,7 @@ Changelog](https://keepachangelog.com/en/1.0.0/)
 * the agent does not require the `libxenstore.so` symlink typically
   coming from Xen development package, only the runtime library
   package is now required
+* VIF hot(un)plug is now properly handled
 
 ### other noteworthy changes
 
