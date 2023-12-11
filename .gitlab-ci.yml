@@ -159,6 +159,19 @@ build-latest-linux:
     # show which dependencies changed in Cargo.lock
     - git diff
 
+## source packaging
+
+pkg-source:
+  stage: package
+  image: ${LINUX_RUSTIMG}
+  script:
+    - cargo package --no-verify
+    - CRATEFILE=$(basename target/package/xen-guest-agent-*.crate)
+    - mv target/package/${CRATEFILE} target/package/${CRATEFILE%.crate}.tar.gz
+  artifacts:
+    paths:
+      - target/package/*.tar.gz
+
 ## packaging from binary artifacts
 
 pkg-deb-amd64:
