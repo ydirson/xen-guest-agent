@@ -1,7 +1,10 @@
 # release process
 
-This describes the current state of things, most of this will get
-automated by scripts and CI jobs.
+This describes:
+
+- the manual steps to release a new version
+- the explanation of how the Gitlab CI jobs producing binaries work,
+  and how to reproduce the locally if needed
 
 These instructions assume you replace `$VERSION` with the actual
 version being released.
