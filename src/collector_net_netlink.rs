@@ -10,9 +10,9 @@ use netlink_packet_core::{
     NLM_F_REQUEST,
 };
 use netlink_packet_route::{
-    AddressMessage, address,
-    LinkMessage, link,
-    RtnlMessage,
+    address::AddressMessage, address,
+    link::LinkMessage, link,
+    RouteNetlinkMessage,
 };
 use netlink_proto::{
     self, new_connection,
@@ -25,16 +25,15 @@ use rtnetlink::constants::{
     };
 use std::cell::RefCell;
 use std::collections::hash_map;
-use std::convert::TryInto;
 use std::error::Error;
 use std::io;
-use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
+use std::net::IpAddr;
 use std::rc::Rc;
 use std::vec::Vec;
 
 pub struct NetworkSource {
-    handle: netlink_proto::ConnectionHandle<RtnlMessage>,
-    messages: UnboundedReceiver<(NetlinkMessage<RtnlMessage>, SocketAddr)>,
+    handle: netlink_proto::ConnectionHandle<RouteNetlinkMessage>,
+    messages: UnboundedReceiver<(NetlinkMessage<RouteNetlinkMessage>, SocketAddr)>,
     iface_cache: &'static mut NetInterfaceCache,
 }
 
@@ -61,7 +60,7 @@ impl NetworkSource {
         nl_hdr.flags = NLM_F_DUMP | NLM_F_REQUEST;
         let nl_msg = NetlinkMessage::new(
             nl_hdr,
-            RtnlMessage::GetLink(LinkMessage::default()).into(),
+            RouteNetlinkMessage::GetLink(LinkMessage::default()).into(),
         );
         // Send the request
         let mut nl_response = self.handle.request(nl_msg, SocketAddr::new(0, 0))?;
@@ -77,7 +76,7 @@ impl NetworkSource {
         nl_hdr.flags = NLM_F_DUMP | NLM_F_REQUEST;
         let nl_msg = NetlinkMessage::new(
             nl_hdr,
-            RtnlMessage::GetAddress(AddressMessage::default()).into(),
+            RouteNetlinkMessage::GetAddress(AddressMessage::default()).into(),
         );
         // Send the request
         let mut nl_response = self.handle.request(nl_msg, SocketAddr::new(0, 0))?;
@@ -103,10 +102,11 @@ impl NetworkSource {
         }
     }
 
-    fn netevent_from_rtnetlink(&mut self, nl_msg: &RtnlMessage) -> io::Result<Vec<NetEvent>> {
+    fn netevent_from_rtnetlink(&mut self, nl_msg: &RouteNetlinkMessage)
+                               -> io::Result<Vec<NetEvent>> {
         let mut events = Vec::<NetEvent>::new();
         match nl_msg {
-            RtnlMessage::NewLink(link_msg) => {
+            RouteNetlinkMessage::NewLink(link_msg) => {
                 let (iface, mac_address) = self.nl_linkmessage_decode(link_msg)?;
                 log::debug!("NewLink({iface:?} {mac_address:?})");
                 events.push(NetEvent{iface: iface.clone(), op: NetEventOp::AddIface});
@@ -114,7 +114,7 @@ impl NetworkSource {
                     events.push(NetEvent{iface, op: NetEventOp::AddMac(mac_address)});
                 }
             },
-            RtnlMessage::DelLink(link_msg) => {
+            RouteNetlinkMessage::DelLink(link_msg) => {
                 let (iface, mac_address) = self.nl_linkmessage_decode(link_msg)?;
                 log::debug!("DelLink({iface:?} {mac_address:?})");
                 if let Some(mac_address) = mac_address {
@@ -123,20 +123,20 @@ impl NetworkSource {
                 }
             events.push(NetEvent{iface, op: NetEventOp::RmIface});
             },
-            RtnlMessage::NewAddress(address_msg) => {
+            RouteNetlinkMessage::NewAddress(address_msg) => {
                 // FIXME does not distinguish when IP is on DOWN iface
                 let (iface, address) = self.nl_addressmessage_decode(address_msg)?;
                 log::debug!("NewAddress({iface:?} {address})");
                 events.push(NetEvent{iface, op: NetEventOp::AddIp(address)});
             },
-            RtnlMessage::DelAddress(address_msg) => {
+            RouteNetlinkMessage::DelAddress(address_msg) => {
                 let (iface, address) = self.nl_addressmessage_decode(address_msg)?;
                 log::debug!("DelAddress({iface:?} {address})");
                 events.push(NetEvent{iface, op: NetEventOp::RmIp(address)});
             },
             _ => {
                 return Err(io::Error::new(io::ErrorKind::InvalidData,
-                                          format!("unhandled RtnlMessage: {nl_msg:?}")));
+                                          format!("unhandled RouteNetlinkMessage: {nl_msg:?}")));
             },
         };
         Ok(events)
@@ -147,16 +147,16 @@ impl NetworkSource {
     ) -> io::Result<(Rc<RefCell<NetInterface>>, // ref to the (possibly new) impacted interface
                      Option<String>,           // MAC address
     )> {
-        let LinkMessage{header, nlas, ..} = msg;
+        let LinkMessage{header, attributes, ..} = msg;
 
         // extract fields of interest
         let mut iface_name: Option<String> = None;
         let mut address_bytes: Option<&Vec<u8>> = None;
-        for nla in nlas {
-            if let link::nlas::Nla::IfName(name) = nla {
+        for nla in attributes {
+            if let link::LinkAttribute::IfName(name) = nla {
                 iface_name = Some(name.to_string());
             }
-            if let link::nlas::Nla::Address(addr) = nla {
+            if let link::LinkAttribute::Address(addr) = nla {
                 address_bytes = Some(addr);
             }
         }
@@ -188,38 +188,16 @@ impl NetworkSource {
 
     fn nl_addressmessage_decode(&mut self, msg: &AddressMessage)
                                 -> io::Result<(Rc<RefCell<NetInterface>>, IpAddr)> {
-        let AddressMessage{header, nlas, ..} = msg;
+        let AddressMessage{header, attributes, ..} = msg;
 
         // extract fields of interest
-        let mut address_bytes: Option<&Vec<u8>> = None;
-        for nla in nlas {
-            if let address::nlas::Nla::Address(addr) = nla {
-                address_bytes = Some(addr);
+        let mut address: Option<&IpAddr> = None;
+        for nla in attributes {
+            if let address::AddressAttribute::Address(addr) = nla {
+                address = Some(addr);
                 break;
             }
         }
-
-        let address = match header.family {
-            // PF_INET
-            2  => match address_bytes {
-                Some(address_bytes) => {
-                    let address_array: [u8; 4] = address_bytes[..].try_into()
-                        .expect("IPv4 with incorrect length");
-                    Some(IpAddr::V4(Ipv4Addr::from(address_array)))
-                },
-                None => None,
-            },
-            // PF_INET6
-            10 => match address_bytes {
-                Some(address_bytes) => {
-                    let address_array: [u8; 16] = address_bytes[..].try_into()
-                        .expect("IPv6 with incorrect length");
-                    Some(IpAddr::V6(Ipv6Addr::from(address_array)))
-                },
-                None => None,
-            },
-            _ => None,
-        };
 
         let iface = match self.iface_cache.entry(header.index) {
             hash_map::Entry::Occupied(entry) => { entry.get().clone() },
@@ -230,7 +208,7 @@ impl NetworkSource {
         };
 
         match address {
-            Some(address) => Ok((iface.clone(), address)),
+            Some(address) => Ok((iface.clone(), *address)),
             None => Err(io::Error::new(io::ErrorKind::InvalidData, "unknown address")),
         }
     }
