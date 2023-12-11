@@ -183,7 +183,7 @@ pkg-deb-amd64:
     - build-release-linux-x86_64
   before_script:
     - apt update
-    - apt install -y build-essential debhelper
+    - apt install -y build-essential debhelper apt-utils
     - dpkg-checkbuilddeps
     - 'VERSION=$(grep "^version =" Cargo.toml | cut -d\" -f2 | tr "-" "~")'
   script:
@@ -194,9 +194,22 @@ pkg-deb-amd64:
       -e "s/@@DATE@@/$(date --rfc-822)/"
     - fakeroot debian/rules binary AGENT_BINARY="target/release/xen-guest-agent"
     - mv -v ../*.deb target/release/
+
+    # repository metadata
+    - cd target/release
+    - apt-ftparchive generate ../../apt-ftparchive.conf
+    - apt-ftparchive release .
+      -o APT::FTPArchive::Release::Description="xen-guest-agent CI packages"
+      -o APT::FTPArchive::Release::Label="xen-guest-agent-ci"
+      -o APT::FTPArchive::Release::Suite="ci"
+      > Release.part
+    - mv Release.part Release
   artifacts:
     paths:
       - target/release/*.deb
+      - target/release/*Release*
+      - target/release/Packages*
+      - target/release/Contents-*
 
 pkg-rpm-x86_64:
   stage: package
