@@ -1,6 +1,7 @@
 stages:
   - build
   - package
+  - deploy
 
 # prevent duplicate pipelines for merge request
 workflow:
@@ -12,6 +13,7 @@ workflow:
 
 variables:
   LINUX_RUSTIMG: "rust:buster"
+  PKG_ROOT: "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic"
 
 .build-template:
   stage: build
@@ -197,11 +199,16 @@ pkg-deb-amd64:
 
     # repository metadata
     - cd target/release
+
+    # mangle names to avoid chars rejected by the gitlab package registry,
+    # see https://gitlab.com/gitlab-org/gitlab/-/issues/413517
+    - for FILE in *.deb; do mv $FILE $(echo $FILE | tr "~" "-"); done
+
     - apt-ftparchive generate ../../apt-ftparchive.conf
     - apt-ftparchive release .
-      -o APT::FTPArchive::Release::Description="xen-guest-agent CI packages"
+      -o APT::FTPArchive::Release::Description="xen-guest-agent CI packages for ${CI_COMMIT_REF_NAME}"
       -o APT::FTPArchive::Release::Label="xen-guest-agent-ci"
-      -o APT::FTPArchive::Release::Suite="ci"
+      -o APT::FTPArchive::Release::Suite="${CI_COMMIT_REF_NAME}"
       > Release.part
     - mv Release.part Release
   artifacts:
@@ -210,6 +217,27 @@ pkg-deb-amd64:
       - target/release/*Release*
       - target/release/Packages*
       - target/release/Contents-*
+    reports:
+      # propagates variables into the pipeline level
+      dotenv: version.env
+
+# The artifact repo does not seem to work well as an APT source, APT
+# gets HTP 400 on Packages for some reason, so deploy it to a package
+# repository instead.
+deploy-deb-amd64:
+  stage: deploy
+  needs:
+    - pkg-deb-amd64
+  image: "curlimages/curl:latest"
+  script:
+    - cd target/release
+    - for FILE in *; do
+    -   echo "uploading '$FILE'"
+    -   >
+        curl --header "JOB-TOKEN: $CI_JOB_TOKEN"
+        --upload-file "$FILE"
+        "${PKG_ROOT}/deb-amd64/${CI_COMMIT_REF_NAME}/${FILE}"
+    - done
 
 pkg-rpm-x86_64:
   stage: package
