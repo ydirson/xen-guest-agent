@@ -205,6 +205,10 @@ pkg-deb-amd64:
     - for FILE in *.deb; do mv $FILE $(echo $FILE | tr "~" "-"); done
 
     - apt-ftparchive generate ../../apt-ftparchive.conf
+
+    # post-processing so we can use `deb https://...generic/deb-amd64/ main/`
+    - 'sed -i "s,^Filename: ./,Filename: ${CI_COMMIT_REF_NAME}/," Packages'
+
     - apt-ftparchive release .
       -o APT::FTPArchive::Release::Description="xen-guest-agent CI packages for ${CI_COMMIT_REF_NAME}"
       -o APT::FTPArchive::Release::Label="xen-guest-agent-ci"
