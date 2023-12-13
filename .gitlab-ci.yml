@@ -204,7 +204,7 @@ rpm-x86_64:
       -e "s/@@UPSTREAMVERSION@@/$UPSTREAMVERSION/"
       -e "s/@@VERSION@@/$VERSION/"
       -e "s/@@AUTHOR@@/$GITLAB_USER_NAME <$GITLAB_USER_EMAIL>/"
-      -e "s/@@DATE@@/$(date +"%a %b %d %Y")/"
+      -e "s/@@DATE@@/$(date +'%a %b %d %Y')/"
     - dnf builddep xen-guest-agent.spec -y
   script:
     - 'rpmbuild -bb xen-guest-agent.spec --define "_topdir $(pwd)"'
