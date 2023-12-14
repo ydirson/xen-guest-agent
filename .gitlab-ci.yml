@@ -90,6 +90,8 @@ variables:
 env-setup:
   stage: setup
   image: alpine:latest
+  before_script:
+    - '[ "$CI_COMMIT_BRANCH" != "main" ] || apk add -y git'
   script:
     - |
       case "$CI_COMMIT_BRANCH" in
