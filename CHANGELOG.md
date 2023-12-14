@@ -27,6 +27,8 @@ Changelog](https://keepachangelog.com/en/1.0.0/)
 * executables and packages for supported guest platforms (currently
   Linux/Glibc and FreeBSD, both for x86_64 guests) are now available
   from Gitlab CI pipelines
+* APT repositories (though not signed) are now available from Gitlab
+  CI pipelines
 * CI pipelines now testbuild every commit in a merge request
 
 ## 0.2.0 - 2023-10-11

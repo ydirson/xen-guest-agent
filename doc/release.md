@@ -1,7 +1,10 @@
 # release process
 
-This describes the current state of things, most of this will get
-automated by scripts and CI jobs.
+This describes:
+
+- the manual steps to release a new version
+- the explanation of how the Gitlab CI jobs producing build artifacts
+  works, and how to reproduce the locally if needed
 
 These instructions assume you replace `$VERSION` with the actual
 version being released.
@@ -20,10 +23,14 @@ operations:
 - run `cargo tree` (or any cargo command updating the version in `Cargo.lock`
 - `git commit Cargo.toml Cargo.lock -m "Release $VERSION"`
 - `git tag $VERSION -m $VERSION`
-- `cargo package`
-- `mv target/package/xen-guest-agent-$VERSION.crate ../xen-guest-agent-$VERSION.tar.gz`
 - update version in Cargo.toml to $NEXTVERSION-dev
 - create new entry for $NEXTVERSION in `CHANGELOG.md`
+
+### source tarball
+
+The tarball itself is created by the CI from the tagged version, using
+`cargo package`.  The generated `.crate` file is indeed a standard
+gzipped source tarball.
 
 ## binary artifacts
 

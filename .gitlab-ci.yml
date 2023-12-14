@@ -1,6 +1,7 @@
 stages:
   - build
   - package
+  - deploy
 
 # prevent duplicate pipelines for merge request
 workflow:
@@ -12,6 +13,7 @@ workflow:
 
 variables:
   LINUX_RUSTIMG: "rust:buster"
+  PKG_ROOT: "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic"
 
 .build-template:
   stage: build
@@ -159,9 +161,22 @@ build-latest-linux:
     # show which dependencies changed in Cargo.lock
     - git diff
 
+## source packaging
+
+pkg-source:
+  stage: package
+  image: ${LINUX_RUSTIMG}
+  script:
+    - cargo package --no-verify
+    - CRATEFILE=$(basename target/package/xen-guest-agent-*.crate)
+    - mv target/package/${CRATEFILE} target/package/${CRATEFILE%.crate}.tar.gz
+  artifacts:
+    paths:
+      - target/package/*.tar.gz
+
 ## packaging from binary artifacts
 
-deb-amd64:
+pkg-deb-amd64:
   stage: package
   image: "debian:10"
   extends:
@@ -170,7 +185,7 @@ deb-amd64:
     - build-release-linux-x86_64
   before_script:
     - apt update
-    - apt install -y build-essential debhelper
+    - apt install -y build-essential debhelper apt-utils
     - dpkg-checkbuilddeps
     - 'VERSION=$(grep "^version =" Cargo.toml | cut -d\" -f2 | tr "-" "~")'
   script:
@@ -181,11 +196,54 @@ deb-amd64:
       -e "s/@@DATE@@/$(date --rfc-822)/"
     - fakeroot debian/rules binary AGENT_BINARY="target/release/xen-guest-agent"
     - mv -v ../*.deb target/release/
+
+    # repository metadata
+    - cd target/release
+
+    # mangle names to avoid chars rejected by the gitlab package registry,
+    # see https://gitlab.com/gitlab-org/gitlab/-/issues/413517
+    - for FILE in *.deb; do mv $FILE $(echo $FILE | tr "~" "-"); done
+
+    - apt-ftparchive generate ../../apt-ftparchive.conf
+
+    # post-processing so we can use `deb https://...generic/deb-amd64/ main/`
+    - 'sed -i "s,^Filename: ./,Filename: ${CI_COMMIT_REF_NAME}/," Packages'
+
+    - apt-ftparchive release .
+      -o APT::FTPArchive::Release::Description="xen-guest-agent CI packages for ${CI_COMMIT_REF_NAME}"
+      -o APT::FTPArchive::Release::Label="xen-guest-agent-ci"
+      -o APT::FTPArchive::Release::Suite="${CI_COMMIT_REF_NAME}"
+      > Release.part
+    - mv Release.part Release
   artifacts:
     paths:
       - target/release/*.deb
+      - target/release/*Release*
+      - target/release/Packages*
+      - target/release/Contents-*
+    reports:
+      # propagates variables into the pipeline level
+      dotenv: version.env
 
-rpm-x86_64:
+# The artifact repo does not seem to work well as an APT source, APT
+# gets HTP 400 on Packages for some reason, so deploy it to a package
+# repository instead.
+deploy-deb-amd64:
+  stage: deploy
+  needs:
+    - pkg-deb-amd64
+  image: "curlimages/curl:latest"
+  script:
+    - cd target/release
+    - for FILE in *; do
+    -   echo "uploading '$FILE'"
+    -   >
+        curl --header "JOB-TOKEN: $CI_JOB_TOKEN"
+        --upload-file "$FILE"
+        "${PKG_ROOT}/deb-amd64/${CI_COMMIT_REF_NAME}/${FILE}"
+    - done
+
+pkg-rpm-x86_64:
   stage: package
   image: "fedora:37"
   extends:
@@ -204,7 +262,7 @@ rpm-x86_64:
       -e "s/@@UPSTREAMVERSION@@/$UPSTREAMVERSION/"
       -e "s/@@VERSION@@/$VERSION/"
       -e "s/@@AUTHOR@@/$GITLAB_USER_NAME <$GITLAB_USER_EMAIL>/"
-      -e "s/@@DATE@@/$(date +"%a %b %d %Y")/"
+      -e "s/@@DATE@@/$(date +'%a %b %d %Y')/"
     - dnf builddep xen-guest-agent.spec -y
   script:
     - 'rpmbuild -bb xen-guest-agent.spec --define "_topdir $(pwd)"'
