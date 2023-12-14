@@ -1,4 +1,5 @@
 stages:
+  - setup
   - build
   - package
   - deploy
@@ -85,6 +86,22 @@ variables:
           - "--no-default-features -F xenstore,net_pnet"
 
 ## standard jobs building with shipped Cargo.lock
+
+env-setup:
+  stage: setup
+  image: alpine:latest
+  script:
+    # update channel must be the same for matching packaging and deploy
+    # jobs, set it once globally
+    - UPDATE_CHANNEL="${CI_COMMIT_REF_NAME}"
+    - echo "UPDATE_CHANNEL=${UPDATE_CHANNEL}" > version.env
+
+    - cat version.env
+
+  artifacts:
+    reports:
+      # propagates variables into the pipeline level
+      dotenv: version.env
 
 build-linux-everycommit:
   rules:
@@ -183,6 +200,7 @@ pkg-deb-amd64:
   extends:
     - .not-scheduled
   needs:
+    - env-setup
     - build-release-linux-x86_64
   before_script:
     - apt update
@@ -208,12 +226,12 @@ pkg-deb-amd64:
     - apt-ftparchive generate ../../apt-ftparchive.conf
 
     # post-processing so we can use `deb https://...generic/deb-amd64/ main/`
-    - 'sed -i "s,^Filename: ./,Filename: ${CI_COMMIT_REF_NAME}/," Packages'
+    - 'sed -i "s,^Filename: ./,Filename: ${UPDATE_CHANNEL}/," Packages'
 
     - apt-ftparchive release .
-      -o APT::FTPArchive::Release::Description="xen-guest-agent CI packages for ${CI_COMMIT_REF_NAME}"
+      -o APT::FTPArchive::Release::Description="xen-guest-agent CI packages for ${UPDATE_CHANNEL}"
       -o APT::FTPArchive::Release::Label="xen-guest-agent-ci"
-      -o APT::FTPArchive::Release::Suite="${CI_COMMIT_REF_NAME}"
+      -o APT::FTPArchive::Release::Suite="${UPDATE_CHANNEL}"
       > Release.part
     - mv Release.part Release
   artifacts:
@@ -229,6 +247,7 @@ pkg-deb-amd64:
 deploy-deb-amd64:
   stage: deploy
   needs:
+    - env-setup
     - pkg-deb-amd64
   image: "curlimages/curl:latest"
   script:
@@ -238,7 +257,7 @@ deploy-deb-amd64:
     -   >
         curl --silent --header "JOB-TOKEN: $CI_JOB_TOKEN"
         --upload-file "$FILE"
-        "${PKG_ROOT}/deb-amd64/${CI_COMMIT_REF_NAME}/${FILE}"
+        "${PKG_ROOT}/deb-amd64/${UPDATE_CHANNEL}/${FILE}"
     - done
 
 pkg-rpm-x86_64:
