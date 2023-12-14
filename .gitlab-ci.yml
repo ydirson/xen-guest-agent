@@ -93,7 +93,7 @@ env-setup:
   script:
     - 'UPSTREAMVERSION=$(grep "^version =" Cargo.toml | cut -d\" -f2)'
     # both DEB and RPM use "~" to sort pre-releases before releases
-    - 'VERSION=$(echo $UPSTREAMVERSION | tr "-" "~")'
+    - 'TILDEVERSION=$(echo $UPSTREAMVERSION | tr "-" "~")'
     # update channel must be the same for matching packaging and deploy
     # jobs, set it once globally
     - |
@@ -105,7 +105,7 @@ env-setup:
 
     - echo "UPDATE_CHANNEL=${UPDATE_CHANNEL}" > version.env
     - echo "UPSTREAMVERSION=${UPSTREAMVERSION}" >> version.env
-    - echo "VERSION=${VERSION}" >> version.env
+    - echo "TILDEVERSION=${TILDEVERSION}" >> version.env
 
     - cat version.env
 
@@ -220,7 +220,7 @@ pkg-deb-amd64:
   script:
     - >-
       sed < debian/changelog.in > debian/changelog
-      -e "s/@@VERSION@@/$VERSION/"
+      -e "s/@@VERSION@@/$TILDEVERSION/"
       -e "s/@@AUTHOR@@/$GITLAB_USER_NAME <$GITLAB_USER_EMAIL>/"
       -e "s/@@DATE@@/$(date --rfc-822)/"
     - fakeroot debian/rules binary AGENT_BINARY="target/release/xen-guest-agent"
@@ -286,7 +286,7 @@ pkg-rpm-x86_64:
     - >-
       sed  < xen-guest-agent.spec.in > xen-guest-agent.spec
       -e "s/@@UPSTREAMVERSION@@/$UPSTREAMVERSION/"
-      -e "s/@@VERSION@@/$VERSION/"
+      -e "s/@@VERSION@@/$TILDEVERSION/"
       -e "s/@@AUTHOR@@/$GITLAB_USER_NAME <$GITLAB_USER_EMAIL>/"
       -e "s/@@DATE@@/$(date +'%a %b %d %Y')/"
     - dnf builddep xen-guest-agent.spec -y
