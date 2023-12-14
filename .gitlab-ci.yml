@@ -34,7 +34,7 @@ variables:
   image: ghcr.io/cross-rs/$CARGO_BUILD_TARGET:main
   before_script:
     # install Rust
-    - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path
+    - curl --silent --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path
     - . "$HOME/.cargo/env"
     - rustup target add $CARGO_BUILD_TARGET
 
@@ -238,7 +238,7 @@ deploy-deb-amd64:
     - for FILE in *; do
     -   echo "uploading '$FILE'"
     -   >
-        curl --header "JOB-TOKEN: $CI_JOB_TOKEN"
+        curl --silent --header "JOB-TOKEN: $CI_JOB_TOKEN"
         --upload-file "$FILE"
         "${PKG_ROOT}/deb-amd64/${CI_COMMIT_REF_NAME}/${FILE}"
     - done
