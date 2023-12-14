@@ -1,4 +1,5 @@
 stages:
+  - setup
   - build
   - package
   - deploy
@@ -10,6 +11,7 @@ workflow:
     - if: $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS
       when: never
     - if: $CI_COMMIT_BRANCH
+    - if: $CI_COMMIT_TAG
 
 variables:
   LINUX_RUSTIMG: "rust:buster"
@@ -34,7 +36,7 @@ variables:
   image: ghcr.io/cross-rs/$CARGO_BUILD_TARGET:main
   before_script:
     # install Rust
-    - curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path
+    - curl --silent --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path
     - . "$HOME/.cargo/env"
     - rustup target add $CARGO_BUILD_TARGET
 
@@ -84,6 +86,40 @@ variables:
           - "--no-default-features -F xenstore,net_pnet"
 
 ## standard jobs building with shipped Cargo.lock
+
+env-setup:
+  stage: setup
+  image: alpine:latest
+  script:
+    - |
+      case "$CI_COMMIT_BRANCH" in
+      main) UPSTREAMVERSION=$(git describe)
+            TILDEVERSION=$UPSTREAMVERSION
+            ;;
+      *)    UPSTREAMVERSION=$(grep "^version =" Cargo.toml | cut -d\" -f2)
+            # both DEB and RPM use "~" to sort pre-releases before releases
+            TILDEVERSION=$(echo $UPSTREAMVERSION | tr "-" "~")
+            ;;
+      esac
+    # update channel must be the same for matching packaging and deploy
+    # jobs, set it once globally
+    - |
+      case "${CI_COMMIT_TAG}" in
+      "") UPDATE_CHANNEL="${CI_COMMIT_REF_NAME}" ;;
+      *-*) UPDATE_CHANNEL="testing" ;;
+      *) UPDATE_CHANNEL="release" ;;
+      esac
+
+    - echo "UPDATE_CHANNEL=${UPDATE_CHANNEL}" > version.env
+    - echo "UPSTREAMVERSION=${UPSTREAMVERSION}" >> version.env
+    - echo "TILDEVERSION=${TILDEVERSION}" >> version.env
+
+    - cat version.env
+
+  artifacts:
+    reports:
+      # propagates variables into the pipeline level
+      dotenv: version.env
 
 build-linux-everycommit:
   rules:
@@ -182,16 +218,16 @@ pkg-deb-amd64:
   extends:
     - .not-scheduled
   needs:
+    - env-setup
     - build-release-linux-x86_64
   before_script:
     - apt update
     - apt install -y build-essential debhelper apt-utils
     - dpkg-checkbuilddeps
-    - 'VERSION=$(grep "^version =" Cargo.toml | cut -d\" -f2 | tr "-" "~")'
   script:
     - >-
       sed < debian/changelog.in > debian/changelog
-      -e "s/@@VERSION@@/$VERSION/"
+      -e "s/@@VERSION@@/$TILDEVERSION/"
       -e "s/@@AUTHOR@@/$GITLAB_USER_NAME <$GITLAB_USER_EMAIL>/"
       -e "s/@@DATE@@/$(date --rfc-822)/"
     - fakeroot debian/rules binary AGENT_BINARY="target/release/xen-guest-agent"
@@ -207,12 +243,12 @@ pkg-deb-amd64:
     - apt-ftparchive generate ../../apt-ftparchive.conf
 
     # post-processing so we can use `deb https://...generic/deb-amd64/ main/`
-    - 'sed -i "s,^Filename: ./,Filename: ${CI_COMMIT_REF_NAME}/," Packages'
+    - 'sed -i "s,^Filename: ./,Filename: ${UPDATE_CHANNEL}/," Packages'
 
     - apt-ftparchive release .
-      -o APT::FTPArchive::Release::Description="xen-guest-agent CI packages for ${CI_COMMIT_REF_NAME}"
+      -o APT::FTPArchive::Release::Description="xen-guest-agent CI packages for ${UPDATE_CHANNEL}"
       -o APT::FTPArchive::Release::Label="xen-guest-agent-ci"
-      -o APT::FTPArchive::Release::Suite="${CI_COMMIT_REF_NAME}"
+      -o APT::FTPArchive::Release::Suite="${UPDATE_CHANNEL}"
       > Release.part
     - mv Release.part Release
   artifacts:
@@ -221,9 +257,6 @@ pkg-deb-amd64:
       - target/release/*Release*
       - target/release/Packages*
       - target/release/Contents-*
-    reports:
-      # propagates variables into the pipeline level
-      dotenv: version.env
 
 # The artifact repo does not seem to work well as an APT source, APT
 # gets HTP 400 on Packages for some reason, so deploy it to a package
@@ -231,6 +264,7 @@ pkg-deb-amd64:
 deploy-deb-amd64:
   stage: deploy
   needs:
+    - env-setup
     - pkg-deb-amd64
   image: "curlimages/curl:latest"
   script:
@@ -238,9 +272,9 @@ deploy-deb-amd64:
     - for FILE in *; do
     -   echo "uploading '$FILE'"
     -   >
-        curl --header "JOB-TOKEN: $CI_JOB_TOKEN"
+        curl --silent --header "JOB-TOKEN: $CI_JOB_TOKEN"
         --upload-file "$FILE"
-        "${PKG_ROOT}/deb-amd64/${CI_COMMIT_REF_NAME}/${FILE}"
+        "${PKG_ROOT}/deb-amd64/${UPDATE_CHANNEL}/${FILE}"
     - done
 
 pkg-rpm-x86_64:
@@ -249,18 +283,17 @@ pkg-rpm-x86_64:
   extends:
     - .not-scheduled
   needs:
+    - env-setup
     - build-release-linux-x86_64
   before_script:
     - dnf install -y rpm-build dnf-utils
     - mkdir SOURCES
     - ln -sr target/release/xen-guest-agent SOURCES/
     - ln -sr startup/xen-guest-agent.service SOURCES/
-    - 'UPSTREAMVERSION=$(grep "^version =" Cargo.toml | cut -d\" -f2)'
-    - 'VERSION=$(echo $UPSTREAMVERSION | tr "-" "~")'
     - >-
       sed  < xen-guest-agent.spec.in > xen-guest-agent.spec
       -e "s/@@UPSTREAMVERSION@@/$UPSTREAMVERSION/"
-      -e "s/@@VERSION@@/$VERSION/"
+      -e "s/@@VERSION@@/$TILDEVERSION/"
       -e "s/@@AUTHOR@@/$GITLAB_USER_NAME <$GITLAB_USER_EMAIL>/"
       -e "s/@@DATE@@/$(date +'%a %b %d %Y')/"
     - dnf builddep xen-guest-agent.spec -y
