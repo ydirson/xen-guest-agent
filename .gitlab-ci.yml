@@ -161,7 +161,7 @@ build-latest-linux:
 
 ## packaging from binary artifacts
 
-deb-amd64:
+pkg-deb-amd64:
   stage: package
   image: "debian:10"
   extends:
@@ -185,7 +185,7 @@ deb-amd64:
     paths:
       - target/release/*.deb
 
-rpm-x86_64:
+pkg-rpm-x86_64:
   stage: package
   image: "fedora:37"
   extends:
