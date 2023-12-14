@@ -221,9 +221,6 @@ pkg-deb-amd64:
       - target/release/*Release*
       - target/release/Packages*
       - target/release/Contents-*
-    reports:
-      # propagates variables into the pipeline level
-      dotenv: version.env
 
 # The artifact repo does not seem to work well as an APT source, APT
 # gets HTP 400 on Packages for some reason, so deploy it to a package
