@@ -91,6 +91,9 @@ env-setup:
   stage: setup
   image: alpine:latest
   script:
+    - 'UPSTREAMVERSION=$(grep "^version =" Cargo.toml | cut -d\" -f2)'
+    # both DEB and RPM use "~" to sort pre-releases before releases
+    - 'VERSION=$(echo $UPSTREAMVERSION | tr "-" "~")'
     # update channel must be the same for matching packaging and deploy
     # jobs, set it once globally
     - |
@@ -99,7 +102,10 @@ env-setup:
       *-*) UPDATE_CHANNEL="testing" ;;
       *) UPDATE_CHANNEL="release" ;;
       esac
+
     - echo "UPDATE_CHANNEL=${UPDATE_CHANNEL}" > version.env
+    - echo "UPSTREAMVERSION=${UPSTREAMVERSION}" >> version.env
+    - echo "VERSION=${VERSION}" >> version.env
 
     - cat version.env
 
@@ -211,7 +217,6 @@ pkg-deb-amd64:
     - apt update
     - apt install -y build-essential debhelper apt-utils
     - dpkg-checkbuilddeps
-    - 'VERSION=$(grep "^version =" Cargo.toml | cut -d\" -f2 | tr "-" "~")'
   script:
     - >-
       sed < debian/changelog.in > debian/changelog
@@ -271,14 +276,13 @@ pkg-rpm-x86_64:
   extends:
     - .not-scheduled
   needs:
+    - env-setup
     - build-release-linux-x86_64
   before_script:
     - dnf install -y rpm-build dnf-utils
     - mkdir SOURCES
     - ln -sr target/release/xen-guest-agent SOURCES/
     - ln -sr startup/xen-guest-agent.service SOURCES/
-    - 'UPSTREAMVERSION=$(grep "^version =" Cargo.toml | cut -d\" -f2)'
-    - 'VERSION=$(echo $UPSTREAMVERSION | tr "-" "~")'
     - >-
       sed  < xen-guest-agent.spec.in > xen-guest-agent.spec
       -e "s/@@UPSTREAMVERSION@@/$UPSTREAMVERSION/"
