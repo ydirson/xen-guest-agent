@@ -243,7 +243,12 @@ pkg-deb-amd64:
 
     # mangle names to avoid chars rejected by the gitlab package registry,
     # see https://gitlab.com/gitlab-org/gitlab/-/issues/413517
-    - for FILE in *.deb; do mv $FILE $(echo $FILE | tr "~" "-"); done
+    - |
+      if [ "${UPSTREAMVERSION}" != "${TILDEVERSION}" ]; then
+          for FILE in *.deb; do
+              mv $FILE $(echo $FILE | tr "~" "-")
+          done
+      fi
 
     - apt-ftparchive generate ../../apt-ftparchive.conf
 
