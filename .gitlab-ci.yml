@@ -91,9 +91,16 @@ env-setup:
   stage: setup
   image: alpine:latest
   script:
-    - 'UPSTREAMVERSION=$(grep "^version =" Cargo.toml | cut -d\" -f2)'
-    # both DEB and RPM use "~" to sort pre-releases before releases
-    - 'TILDEVERSION=$(echo $UPSTREAMVERSION | tr "-" "~")'
+    - |
+      case "$CI_COMMIT_BRANCH" in
+      main) UPSTREAMVERSION=$(git describe)
+            TILDEVERSION=$UPSTREAMVERSION
+            ;;
+      *)    UPSTREAMVERSION=$(grep "^version =" Cargo.toml | cut -d\" -f2)
+            # both DEB and RPM use "~" to sort pre-releases before releases
+            TILDEVERSION=$(echo $UPSTREAMVERSION | tr "-" "~")
+            ;;
+      esac
     # update channel must be the same for matching packaging and deploy
     # jobs, set it once globally
     - |
