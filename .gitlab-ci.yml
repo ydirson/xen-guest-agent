@@ -100,10 +100,12 @@ env-setup:
       case "$CI_COMMIT_REF_NAME" in
       main) UPSTREAMVERSION=$(git describe)
             TILDEVERSION=$UPSTREAMVERSION
+            RPMVERSION=$(echo $UPSTREAMVERSION | tr "-" "+")
             ;;
       *)    UPSTREAMVERSION=$(grep "^version =" Cargo.toml | cut -d\" -f2)
             # both DEB and RPM use "~" to sort pre-releases before releases
             TILDEVERSION=$(echo $UPSTREAMVERSION | tr "-" "~")
+            RPMVERSION=$TILDEVERSION
             ;;
       esac
     # update channel must be the same for matching packaging and deploy
@@ -118,6 +120,7 @@ env-setup:
     - echo "UPDATE_CHANNEL=${UPDATE_CHANNEL}" > version.env
     - echo "UPSTREAMVERSION=${UPSTREAMVERSION}" >> version.env
     - echo "TILDEVERSION=${TILDEVERSION}" >> version.env
+    - echo "RPMVERSION=${RPMVERSION}" >> version.env
 
     - cat version.env
 
@@ -303,7 +306,7 @@ pkg-rpm-x86_64:
     - >-
       sed  < xen-guest-agent.spec.in > xen-guest-agent.spec
       -e "s/@@UPSTREAMVERSION@@/$UPSTREAMVERSION/"
-      -e "s/@@VERSION@@/$TILDEVERSION/"
+      -e "s/@@VERSION@@/$RPMVERSION/"
       -e "s/@@AUTHOR@@/$GITLAB_USER_NAME <$GITLAB_USER_EMAIL>/"
       -e "s/@@DATE@@/$(date +'%a %b %d %Y')/"
     - dnf builddep xen-guest-agent.spec -y
