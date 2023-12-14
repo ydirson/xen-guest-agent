@@ -93,7 +93,12 @@ env-setup:
   script:
     # update channel must be the same for matching packaging and deploy
     # jobs, set it once globally
-    - UPDATE_CHANNEL="${CI_COMMIT_REF_NAME}"
+    - |
+      case "${CI_COMMIT_TAG}" in
+      "") UPDATE_CHANNEL="${CI_COMMIT_REF_NAME}" ;;
+      *-*) UPDATE_CHANNEL="testing" ;;
+      *) UPDATE_CHANNEL="release" ;;
+      esac
     - echo "UPDATE_CHANNEL=${UPDATE_CHANNEL}" > version.env
 
     - cat version.env
