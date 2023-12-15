@@ -29,7 +29,7 @@ Changelog](https://keepachangelog.com/en/1.0.0/)
   from Gitlab CI pipelines
 * APT repositories (though not signed) are now available from Gitlab
   CI pipelines
-* CI pipelines now testbuild every commit in a merge request
+* CI pipelines now testbuilds every commit in a merge request
 
 ## 0.2.0 - 2023-10-11
 
