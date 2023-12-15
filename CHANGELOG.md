@@ -3,6 +3,8 @@
 The format is (loosely) based on [Keep a
 Changelog](https://keepachangelog.com/en/1.0.0/)
 
+## 0.4.0 - unreleased
+
 ## 0.3.0 - 2023-12-15
 
 ### new features
