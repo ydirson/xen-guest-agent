@@ -276,6 +276,8 @@ pkg-deb-amd64:
 # repository instead.
 deploy-deb-amd64:
   stage: deploy
+  extends:
+    - .not-scheduled
   needs:
     - env-setup
     - pkg-deb-amd64
