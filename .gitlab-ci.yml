@@ -207,6 +207,20 @@ build-latest-linux:
     # show which dependencies changed in Cargo.lock
     - git diff
 
+build-latest-freebsd12-x86_64:
+  extends:
+    - .cross-freebsd12-x86_64-build-template
+    - .scheduled
+  variables:
+    CARGO_FLAGS: "-v"
+  parallel: !reference [.featurematrix.no-netlink,parallel]
+  before_script:
+    - !reference [".debian-build-template", "before_script"]
+    - mv Cargo.lock Cargo.lock.current
+  after_script:
+    # show which dependencies changed in Cargo.lock
+    - git diff
+
 ## source packaging
 
 pkg-source:
