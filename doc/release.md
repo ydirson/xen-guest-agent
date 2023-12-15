@@ -17,14 +17,16 @@ outputs:
 - source tarball
 
 operations:
-- check with `cargo outdated` not to miss any outdated dependency
-- update version in `Cargo.toml`
-- set release date in `CHANGELOG.md`, add link to prospective URL for Gitlab release
-- run `cargo tree` (or any cargo command updating the version in `Cargo.lock`
-- `git commit Cargo.toml Cargo.lock -m "Release $VERSION"`
-- `git tag $VERSION -m $VERSION`
-- update version in Cargo.toml to $NEXTVERSION-dev
-- create new entry for $NEXTVERSION in `CHANGELOG.md`
+- create release pull request, and get merged
+  - check with `cargo outdated` not to miss any outdated dependency
+  - update version in `Cargo.toml`
+  - set release date in `CHANGELOG.md`, add link to prospective URL for Gitlab release
+  - run `cargo tree` (or any cargo command updating the version in `Cargo.lock`
+  - `git commit Cargo.toml Cargo.lock -m "Release version $VERSION"`
+- `git tag $VERSION -m $VERSION`, push
+- create post-release pull request
+  - update version in Cargo.toml to $NEXTVERSION-dev
+  - create new entry for $NEXTVERSION in `CHANGELOG.md`
 
 ### source tarball
 
