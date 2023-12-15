@@ -153,13 +153,13 @@ build-linux:
   parallel: !reference [.featurematrix,parallel]
   extends:
     - .debian-build-template
+  variables:
+    CARGO_FLAGS: "-v"
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
       # building branch tip already included in 'everycommit'
       when: never
     - !reference [.not-scheduled,rules]
-  variables:
-    CARGO_FLAGS: "-v"
 
 build-release-linux-x86_64:
   extends:
@@ -198,6 +198,22 @@ build-latest-linux:
   extends:
     - .debian-build-template
     - .scheduled
+  variables:
+    CARGO_FLAGS: "-v"
+  before_script:
+    - !reference [".debian-build-template", "before_script"]
+    - mv Cargo.lock Cargo.lock.current
+  after_script:
+    # show which dependencies changed in Cargo.lock
+    - git diff
+
+build-latest-freebsd12-x86_64:
+  extends:
+    - .cross-freebsd12-x86_64-build-template
+    - .scheduled
+  variables:
+    CARGO_FLAGS: "-v"
+  parallel: !reference [.featurematrix.no-netlink,parallel]
   before_script:
     - !reference [".debian-build-template", "before_script"]
     - mv Cargo.lock Cargo.lock.current
