@@ -226,6 +226,8 @@ build-latest-freebsd12-x86_64:
 pkg-source:
   stage: package
   image: ${LINUX_RUSTIMG}
+  extends:
+    - .not-scheduled
   script:
     - cargo package --no-verify
     - CRATEFILE=$(basename target/package/xen-guest-agent-*.crate)
