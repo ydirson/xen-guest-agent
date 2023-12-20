@@ -118,7 +118,7 @@ fn setup_logger(use_stderr:bool, loglevel_string: &str) -> Result<(), Box<dyn Er
         setup_env_logger(loglevel_string)?;
     } else {
         #[cfg(not(unix))]
-        abort!();
+        panic!("no system logger supported");
 
         #[cfg(unix)]
         setup_system_logger(loglevel_string)?;

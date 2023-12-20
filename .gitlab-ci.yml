@@ -56,6 +56,11 @@ variables:
     - PKG=$(./devscripts/freebsd-fetch-package.sh xen-tools)
     - tar -C $CROSS_SYSROOT/ --xform s,^/usr/local/,/usr/, -xf $PKG
 
+.cross-windows-build-template:
+  extends:
+    - .cross-build-template
+  variables:
+    CARGO_BUILD_TARGET: "x86_64-pc-windows-gnu"
 .scheduled:
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
@@ -190,6 +195,17 @@ build-release-freebsd12-x86_64:
   artifacts:
     paths:
       - target/x86_64-unknown-freebsd/release/xen-guest-agent
+
+build-windows-x86_64:
+  extends:
+    - .cross-windows-build-template
+    - .not-scheduled
+  variables:
+    CARGO_FLAGS: "-v"
+    FEATURES: "--no-default-features"
+  artifacts:
+    paths:
+      - target/x86_64-pc-windows-gnu/debug/xen-guest-agent.exe
 
 ## continuous checking against most recent dependencies
 
