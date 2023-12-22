@@ -178,12 +178,12 @@ build-release-linux-x86_64:
       - target/release/xen-guest-agent
 
 build-freebsd12-x86_64:
+  parallel: !reference [.featurematrix.no-netlink,parallel]
   extends:
     - .cross-freebsd12-x86_64-build-template
     - .not-scheduled
   variables:
     CARGO_FLAGS: "-v"
-  parallel: !reference [.featurematrix.no-netlink,parallel]
 
 build-release-freebsd12-x86_64:
   extends:
@@ -224,12 +224,12 @@ build-latest-linux:
     - git diff
 
 build-latest-freebsd12-x86_64:
+  parallel: !reference [.featurematrix.no-netlink,parallel]
   extends:
     - .cross-freebsd12-x86_64-build-template
     - .scheduled
   variables:
     CARGO_FLAGS: "-v"
-  parallel: !reference [.featurematrix.no-netlink,parallel]
   before_script:
     - !reference [".cross-freebsd12-x86_64-build-template", "before_script"]
     - mv Cargo.lock Cargo.lock.current
