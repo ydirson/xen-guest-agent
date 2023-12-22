@@ -61,6 +61,14 @@ variables:
     - .cross-build-template
   variables:
     CARGO_BUILD_TARGET: "x86_64-pc-windows-gnu"
+
+.cross-linux-aarch64-build-template:
+  extends:
+    - .cross-build-template
+  variables:
+    CARGO_BUILD_TARGET: "aarch64-unknown-linux-gnu"
+    BINDGEN_EXTRA_CLANG_ARGS_aarch64_unknown_linux_gnu: "--sysroot=/usr/aarch64-linux-gnu -idirafter/usr/include"
+
 .scheduled:
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
@@ -178,12 +186,12 @@ build-release-linux-x86_64:
       - target/release/xen-guest-agent
 
 build-freebsd12-x86_64:
+  parallel: !reference [.featurematrix.no-netlink,parallel]
   extends:
     - .cross-freebsd12-x86_64-build-template
     - .not-scheduled
   variables:
     CARGO_FLAGS: "-v"
-  parallel: !reference [.featurematrix.no-netlink,parallel]
 
 build-release-freebsd12-x86_64:
   extends:
@@ -207,6 +215,19 @@ build-windows-x86_64:
     paths:
       - target/x86_64-pc-windows-gnu/debug/xen-guest-agent.exe
 
+build-linux-aarch64:
+  parallel: !reference [.featurematrix,parallel]
+  extends:
+    - .cross-linux-aarch64-build-template
+    - .not-scheduled
+  variables:
+    CARGO_FLAGS: "-v"
+  before_script:
+    - !reference [.cross-build-template,before_script]
+    - dpkg --add-architecture arm64
+    - apt-get update
+    - apt-get install -y libxen-dev:arm64
+
 ## continuous checking against most recent dependencies
 
 build-latest-linux:
@@ -224,12 +245,12 @@ build-latest-linux:
     - git diff
 
 build-latest-freebsd12-x86_64:
+  parallel: !reference [.featurematrix.no-netlink,parallel]
   extends:
     - .cross-freebsd12-x86_64-build-template
     - .scheduled
   variables:
     CARGO_FLAGS: "-v"
-  parallel: !reference [.featurematrix.no-netlink,parallel]
   before_script:
     - !reference [".cross-freebsd12-x86_64-build-template", "before_script"]
     - mv Cargo.lock Cargo.lock.current
