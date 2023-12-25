@@ -170,5 +170,17 @@ environment variables.
 
 ## What's next?
 
-0. Discuss with the community about the PoC before going further (design, review etc.)
-1. Converge with an implementation in the main branch and start to advertise about it
+### Community feedback
+
+* xen-devel: https://lists.xenproject.org/archives/html/xen-devel/2023-12/msg01519.html
+* XCP-ng forum: https://xcp-ng.org/forum/topic/7974/new-rust-xen-guest-tools
+
+So far, no blocker reported.
+
+### Windows guests
+
+We started to investigate a way to also use those tools for Windows guests.
+
+### Getting more contributors
+
+We are seeking to get more contributors. Reviews and feedback welcome!
