@@ -104,6 +104,9 @@ clippy:
           - "--no-default-features -F xenstore"
           - "--no-default-features -F net_netlink"
           - "--no-default-features -F net_pnet"
+          #
+          - "--no-default-features -F xenstore,static"
+          - "-F static"
 
 .featurematrix.no-netlink:
   parallel:
@@ -113,6 +116,10 @@ clippy:
           - "--no-default-features -F xenstore"
           - "--no-default-features -F net_pnet"
           - "--no-default-features -F xenstore,net_pnet"
+          ## this matrix is only by FreeBSD today, and we cannot link
+          ## statically on FreeBSD because libxenstore is not built as PIE
+          #- "--no-default-features -F xenstore,static"
+          #- "--no-default-features -F xenstore,static,net_pnet"
 
 ## standard jobs building with shipped Cargo.lock
 
@@ -196,7 +203,7 @@ build-release-linux-x86_64:
     - .debian-build-template
     - .not-scheduled
   variables:
-    FEATURES: ""
+    FEATURES: "-F static"
     CARGO_FLAGS: "--release"
   artifacts:
     paths:

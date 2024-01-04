@@ -5,6 +5,11 @@ Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ## 0.4.0 - unreleased
 
+### new features
+
+* can be linked statically with libxenstore to distribute a more
+  standalone binary (`-F static`).  Used for official Linux binary.
+
 ### bugfixes
 
 * stale network information in xenstore is now removed on startup
