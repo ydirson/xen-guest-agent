@@ -34,6 +34,11 @@ impl XenstoreSchema for Schema {
         Ok(())
     }
 
+    fn cleanup_ifaces(&mut self) -> io::Result<()> {
+        // Currently only vif interfaces are cleaned
+        xs_unpublish(&self.xs, "data/net")
+    }
+
     fn publish_memfree(&self, _mem_free_kb: usize) -> io::Result<()> {
         //xs_publish(&self.xs, "data/meminfo_free", &mem_free_kb.to_string())?;
         Ok(())

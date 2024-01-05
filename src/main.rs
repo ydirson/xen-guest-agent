@@ -46,6 +46,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let mut collector_memory = MemorySource::new()?;
 
+    // Remove old entries from previous agent to avoid having unknown
+    // interfaces. We will repopulate existing ones immediatly.
+    publisher.cleanup_ifaces()?;
+
     let kernel_info = collect_kernel()?;
     let mem_total_kb = match collector_memory.get_total_kb() {
         Ok(mem_total_kb) => Some(mem_total_kb),
