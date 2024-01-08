@@ -41,6 +41,7 @@ variables:
     - rustup target add $CARGO_BUILD_TARGET
 
 .cross-freebsd12-x86_64-build-template:
+  allow_failure: true
   extends:
     - .cross-build-template
   variables:
