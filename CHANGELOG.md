@@ -5,6 +5,11 @@ Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ## 0.4.0 - unreleased
 
+### other noteworthy changes
+
+* CI pipelines stopped producing binaries for EOL'd FreeBSD 12.4,
+  switched to 13.2
+
 ## 0.3.0 - 2023-12-15
 
 ### new features

@@ -40,13 +40,13 @@ variables:
     - . "$HOME/.cargo/env"
     - rustup target add $CARGO_BUILD_TARGET
 
-.cross-freebsd12-x86_64-build-template:
+.cross-freebsd13-x86_64-build-template:
   allow_failure: true
   extends:
     - .cross-build-template
   variables:
     CARGO_BUILD_TARGET: "x86_64-unknown-freebsd"
-    CROSS_SYSROOT: "/usr/local/x86_64-unknown-freebsd12"
+    CROSS_SYSROOT: "/usr/local/x86_64-unknown-freebsd13"
   before_script:
     - !reference [.cross-build-template,before_script]
     # cross sysroot does not match its toolchain
@@ -186,17 +186,17 @@ build-release-linux-x86_64:
     paths:
       - target/release/xen-guest-agent
 
-build-freebsd12-x86_64:
+build-freebsd13-x86_64:
   parallel: !reference [.featurematrix.no-netlink,parallel]
   extends:
-    - .cross-freebsd12-x86_64-build-template
+    - .cross-freebsd13-x86_64-build-template
     - .not-scheduled
   variables:
     CARGO_FLAGS: "-v"
 
-build-release-freebsd12-x86_64:
+build-release-freebsd13-x86_64:
   extends:
-    - .cross-freebsd12-x86_64-build-template
+    - .cross-freebsd13-x86_64-build-template
     - .not-scheduled
   variables:
     FEATURES: "--no-default-features -F xenstore,net_pnet"
@@ -245,15 +245,15 @@ build-latest-linux:
     # show which dependencies changed in Cargo.lock
     - git diff
 
-build-latest-freebsd12-x86_64:
+build-latest-freebsd13-x86_64:
   parallel: !reference [.featurematrix.no-netlink,parallel]
   extends:
-    - .cross-freebsd12-x86_64-build-template
+    - .cross-freebsd13-x86_64-build-template
     - .scheduled
   variables:
     CARGO_FLAGS: "-v"
   before_script:
-    - !reference [".cross-freebsd12-x86_64-build-template", "before_script"]
+    - !reference [".cross-freebsd13-x86_64-build-template", "before_script"]
     - mv Cargo.lock Cargo.lock.current
   after_script:
     # show which dependencies changed in Cargo.lock
