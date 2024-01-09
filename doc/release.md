@@ -114,7 +114,7 @@ Then build:
 > These instructions do not imply using a clean container (yet); if
 > you expect reproducibility some extra measures might be needed.
 
-On old-enough FreeBSD x86_64 guest version (FreeBSD 12):
+On oldest supported FreeBSD x86_64 version (curently FreeBSD 13.2):
 
 ```
 BINDGEN_EXTRA_CLANG_ARGS=-I/usr/local/include \
