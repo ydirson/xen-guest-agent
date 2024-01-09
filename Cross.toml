@@ -5,8 +5,9 @@ pre-build = ["""
 mkdir -p /usr/local/x86_64-unknown-freebsd13/usr &&
 ln -s ../include /usr/local/x86_64-unknown-freebsd13/usr/include &&
 ln -s ../lib /usr/local/x86_64-unknown-freebsd13/usr/lib &&
-PKG=$(./devscripts/freebsd-fetch-package.sh xen-tools) &&
-tar -C /usr/local/x86_64-unknown-freebsd13/ --xform s,^/usr/local/,/usr/, -xf $PKG
+export FREEBSD_MIRROR=$(/freebsd-fetch-best-mirror.sh) &&
+/freebsd-setup-packagesite.sh &&
+/freebsd-install-package.sh xen-tools
 """]
 
 [target.aarch64-unknown-linux-gnu]
