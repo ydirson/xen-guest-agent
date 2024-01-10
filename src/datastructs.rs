@@ -36,7 +36,7 @@ pub struct NetInterface {
 impl NetInterface {
     pub fn new(index: u32, name: Option<String>) -> NetInterface {
         let name = match name {
-            Some(string) => { string },
+            Some(string) => string,
             None => {
                 log::error!("new interface with index {index} has no name");
                 String::from("") // this is not valid, but user will now be aware

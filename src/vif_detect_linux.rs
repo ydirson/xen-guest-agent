@@ -20,7 +20,7 @@ pub fn get_toolstack_interface(iface_name: &str) -> ToolstackNetInterface {
                 Ok(nodename) => {
                     let nodename = nodename.trim();
                     const PREFIX: &str = "device/vif/";
-                    if ! nodename.starts_with(PREFIX) {
+                    if !nodename.starts_with(PREFIX) {
                         log::debug!("ignoring interface {nodename} as not under {PREFIX}");
                         return ToolstackNetInterface::None;
                     }

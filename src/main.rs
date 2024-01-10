@@ -3,9 +3,9 @@ mod datastructs;
 #[cfg_attr(feature = "xenstore", path = "publisher_xenstore.rs")]
 mod publisher;
 #[cfg(feature = "xenstore")]
-mod xenstore_schema_std;
-#[cfg(feature = "xenstore")]
 mod xenstore_schema_rfc;
+#[cfg(feature = "xenstore")]
+mod xenstore_schema_std;
 
 #[cfg_attr(feature = "net_netlink", path = "collector_net_netlink.rs")]
 #[cfg_attr(feature = "net_pnet", path = "collector_net_pnet.rs")]
@@ -21,12 +21,12 @@ mod vif_detect;
 
 use clap::Parser;
 
+use crate::collector_memory::MemorySource;
+use crate::collector_net::NetworkSource;
 use crate::datastructs::KernelInfo;
 use crate::publisher::Publisher;
-use crate::collector_net::NetworkSource;
-use crate::collector_memory::MemorySource;
 
-use futures::{FutureExt, pin_mut, select, TryStreamExt};
+use futures::{pin_mut, select, FutureExt, TryStreamExt};
 use std::error::Error;
 use std::io;
 use std::str::FromStr;

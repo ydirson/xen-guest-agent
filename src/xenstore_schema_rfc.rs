@@ -1,5 +1,5 @@
 use crate::datastructs::{KernelInfo, NetEvent, NetEventOp};
-use crate::publisher::{XenstoreSchema, xs_publish, xs_unpublish};
+use crate::publisher::{xs_publish, xs_unpublish, XenstoreSchema};
 use std::io;
 use std::net::IpAddr;
 use xenstore_rs::Xs;

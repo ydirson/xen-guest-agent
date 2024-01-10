@@ -1,28 +1,18 @@
-use async_stream::try_stream;
 use crate::datastructs::{NetEvent, NetEventOp, NetInterface, NetInterfaceCache};
+use async_stream::try_stream;
 use futures::channel::mpsc::UnboundedReceiver;
 use futures::stream::{Stream, StreamExt};
 use netlink_packet_core::{
-    NetlinkHeader,
-    NetlinkMessage,
-    NetlinkPayload,
-    NLM_F_DUMP,
-    NLM_F_REQUEST,
+    NetlinkHeader, NetlinkMessage, NetlinkPayload, NLM_F_DUMP, NLM_F_REQUEST,
 };
 use netlink_packet_route::{
-    address::AddressMessage, address,
-    link::LinkMessage, link,
-    RouteNetlinkMessage,
+    address, address::AddressMessage, link, link::LinkMessage, RouteNetlinkMessage,
 };
 use netlink_proto::{
     self, new_connection,
     sys::{protocols::NETLINK_ROUTE, AsyncSocket, SocketAddr},
 };
-use rtnetlink::constants::{
-    RTMGRP_IPV4_IFADDR,
-    RTMGRP_IPV6_IFADDR,
-    RTMGRP_LINK,
-    };
+use rtnetlink::constants::{RTMGRP_IPV4_IFADDR, RTMGRP_IPV6_IFADDR, RTMGRP_LINK};
 use std::cell::RefCell;
 use std::collections::hash_map;
 use std::error::Error;
