@@ -5,6 +5,10 @@ Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ## 0.4.0 - unreleased
 
+### bugfixes
+
+* stale network information in xenstore is now removed on startup
+
 ### other noteworthy changes
 
 * CI pipelines stopped producing binaries for EOL'd FreeBSD 12.4,
