@@ -79,6 +79,18 @@ variables:
   rules:
     - if: $CI_PIPELINE_SOURCE != "schedule"
 
+## quick checks
+
+clippy:
+  stage: check
+  extends:
+    - .debian-build-template
+  before_script:
+    - !reference [.debian-build-template,before_script]
+    - rustup component add clippy
+  script:
+    - cargo clippy
+
 ## common defs
 
 .featurematrix:
