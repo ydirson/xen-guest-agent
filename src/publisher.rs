@@ -40,4 +40,8 @@ impl Publisher {
         }
         Ok(())
     }
+
+    pub fn cleanup_ifaces(&mut self) -> io::Result<()> {
+        Ok(())
+    }
 }

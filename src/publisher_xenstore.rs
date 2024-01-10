@@ -10,6 +10,7 @@ pub trait XenstoreSchema {
     ) -> io::Result<()>;
     fn publish_memfree(&self, mem_free_kb: usize) -> io::Result<()>;
     fn publish_netevent(&mut self, event: &NetEvent) -> io::Result<()>;
+    fn cleanup_ifaces(&mut self) -> io::Result<()>;
 }
 
 pub struct Publisher {
@@ -35,6 +36,10 @@ impl Publisher {
     }
     pub fn publish_netevent(&mut self, event: &NetEvent) -> io::Result<()> {
         self.schema.publish_netevent(event)
+    }
+
+    pub fn cleanup_ifaces(&mut self) -> io::Result<()> {
+        self.schema.cleanup_ifaces()
     }
 }
 

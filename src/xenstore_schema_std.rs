@@ -137,6 +137,11 @@ impl XenstoreSchema for Schema {
         }
         Ok(())
     }
+
+    fn cleanup_ifaces(&mut self) -> io::Result<()> {
+        // Currently only vif interfaces are cleaned
+        xs_unpublish(&self.xs, "attr/vif")
+    }
 }
 
 impl Schema {
