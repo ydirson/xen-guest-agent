@@ -25,17 +25,20 @@ pub fn get_toolstack_interface(iface_name: &str) -> ToolstackNetInterface {
                         return ToolstackNetInterface::None;
                     }
                     let vif_id = nodename[PREFIX.len()..].parse().unwrap();
-                    return ToolstackNetInterface::Vif(vif_id);
+
+                    ToolstackNetInterface::Vif(vif_id)
                 },
                 Err(e) => {
                     log::error!("reading {device_path}/nodename: {e}");
-                    return ToolstackNetInterface::None;
+
+                    ToolstackNetInterface::None
                 },
             }
         },
         Err(e) => {
             log::debug!("reading {device_path}/devtype: {e}");
-            return ToolstackNetInterface::None;
+
+            ToolstackNetInterface::None
         },
     }
 }

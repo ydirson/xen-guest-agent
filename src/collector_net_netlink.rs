@@ -172,15 +172,12 @@ impl NetworkSource {
                                 .into());
 
         // handle renaming
-        match iface_name {
-            Some(iface_name) => {
-                let iface_renamed = iface.borrow().name != iface_name;
-                if iface_renamed {
-                    log::trace!("name change: {iface:?} now named '{iface_name}'");
-                    iface.borrow_mut().name = iface_name;
-                }
-            },
-            None => {},
+        if let Some(iface_name) = iface_name {
+            let iface_renamed = iface.borrow().name != iface_name;
+            if iface_renamed {
+                log::trace!("name change: {iface:?} now named '{iface_name}'");
+                iface.borrow_mut().name = iface_name;
+            }
         };
 
         Ok((iface.clone(), mac_address))
