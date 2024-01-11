@@ -4,7 +4,7 @@ use crate::datastructs::ToolstackNetInterface;
 
 pub fn get_toolstack_interface(iface_name: &str) -> ToolstackNetInterface {
     const PREFIX: &str = "xn";
-    if ! iface_name.starts_with(PREFIX) {
+    if !iface_name.starts_with(PREFIX) {
         log::debug!("ignoring interface {iface_name} as not starting with '{PREFIX}'");
         return ToolstackNetInterface::None;
     }

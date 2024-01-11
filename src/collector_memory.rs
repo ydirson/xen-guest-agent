@@ -1,7 +1,6 @@
 use std::io;
 
-pub struct MemorySource {
-}
+pub struct MemorySource {}
 
 impl MemorySource {
     pub fn new() -> io::Result<MemorySource> {

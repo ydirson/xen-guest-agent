@@ -1,5 +1,5 @@
 use crate::datastructs::{KernelInfo, NetEvent, NetEventOp, NetInterface, ToolstackNetInterface};
-use crate::publisher::{XenstoreSchema, xs_publish, xs_unpublish};
+use crate::publisher::{xs_publish, xs_unpublish, XenstoreSchema};
 use std::collections::HashMap;
 use std::io;
 use std::net::IpAddr;
@@ -76,7 +76,7 @@ impl XenstoreSchema for Schema {
             xs_publish(&self.xs, "data/meminfo_total", &mem_total_kb.to_string())?;
         }
 
-        if ! self.forbidden_control_feature_balloon {
+        if !self.forbidden_control_feature_balloon {
             // we may want to be more clever some day, e.g. by
             // checking if the guest indeed has ballooning, and if the
             // balloon driver has reached the requested initial
@@ -112,10 +112,10 @@ impl XenstoreSchema for Schema {
         let xs_iface_prefix = format!("attr/vif/{iface_id}");
         match &event.op {
             NetEventOp::AddIface => {
-                xs_publish(&self.xs, &format!("{xs_iface_prefix}"), "")?;
+                xs_publish(&self.xs, &xs_iface_prefix, "")?;
             },
             NetEventOp::RmIface => {
-                xs_unpublish(&self.xs, &format!("{xs_iface_prefix}"))?;
+                xs_unpublish(&self.xs, &xs_iface_prefix)?;
             },
             NetEventOp::AddIp(address) => {
                 let key_suffix = self.munged_address(address, &event.iface.borrow())?;

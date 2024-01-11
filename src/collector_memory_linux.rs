@@ -17,7 +17,7 @@ impl MemorySource {
     pub fn get_available_kb(&mut self) -> io::Result<usize> {
         self.get_num_field("MemAvailable:")
     }
-    
+
     fn get_num_field(&mut self, tag: &str) -> io::Result<usize> {
         self.meminfo.rewind()?;
         let mut rawdata = String::new();

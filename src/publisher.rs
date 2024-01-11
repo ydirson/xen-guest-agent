@@ -4,8 +4,7 @@ use os_info;
 use std::error::Error;
 use std::io;
 
-pub struct Publisher {
-}
+pub struct Publisher {}
 
 impl Publisher {
     pub fn new() -> Result<Publisher, Box<dyn Error>> {
@@ -19,7 +18,7 @@ impl Publisher {
         if let Some(mem_total_kb) = mem_total_kb {
             println!("Total memory: {mem_total_kb} KB");
         }
-        if let Some(KernelInfo{release}) = kernel_info {
+        if let Some(KernelInfo { release }) = kernel_info {
             println!("Kernel version: {}", release);
         }
         Ok(())

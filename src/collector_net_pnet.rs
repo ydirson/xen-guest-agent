@@ -1,10 +1,10 @@
-use async_stream::try_stream;
 use crate::datastructs::{NetEvent, NetEventOp, NetInterface, NetInterfaceCache};
+use async_stream::try_stream;
 use futures::stream::Stream;
 use ipnetwork::IpNetwork;
 use pnet_base::MacAddr;
 use std::cell::RefCell;
-use std::collections::{HashMap, HashSet, hash_map};
+use std::collections::{hash_map, HashMap, HashSet};
 use std::error::Error;
 use std::io;
 use std::rc::Rc;
@@ -57,7 +57,6 @@ impl NetworkSource {
         }
     }
 
-
     fn get_ifconfig_data(&mut self) -> io::Result<Vec<NetEvent>> {
         let network_interfaces = pnet_datalink::interfaces();
 
@@ -80,7 +79,7 @@ impl NetworkSource {
         // diff addresses_cache and current_addresses view
 
         // events to be returned
-        let mut events = vec!();
+        let mut events = vec![];
         // pseudo-const to get a valid reference for unwrap_or
         let empty_address_set: HashSet<Address> = HashSet::new();
 
@@ -102,7 +101,7 @@ impl NetworkSource {
                     let iface_adresses = &iface_info.addresses;
                     for disappearing in cached_info.addresses.difference(iface_adresses) {
                         log::trace!("disappearing {}: {:?}", iface.borrow().name, disappearing);
-                        events.push(NetEvent{
+                        events.push(NetEvent {
                             iface: iface.clone(),
                             op: match disappearing {
                                 Address::IP(ip) => NetEventOp::RmIp(ip.ip()),

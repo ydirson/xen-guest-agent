@@ -3,8 +3,7 @@ use futures::stream::Stream;
 use std::error::Error;
 use std::io;
 
-pub struct NetworkSource {
-}
+pub struct NetworkSource {}
 
 impl NetworkSource {
     pub fn new(_cache: &'static mut NetInterfaceCache) -> io::Result<NetworkSource> {
@@ -12,7 +11,7 @@ impl NetworkSource {
     }
 
     pub async fn collect_current(&mut self) -> Result<Vec<NetEvent>, Box<dyn Error>> {
-        Ok(vec!())
+        Ok(vec![])
     }
 
     pub fn stream(&mut self) -> impl Stream<Item = io::Result<NetEvent>> + '_ {
