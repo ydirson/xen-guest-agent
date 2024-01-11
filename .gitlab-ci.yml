@@ -54,7 +54,8 @@ variables:
     - ln -s ../lib $CROSS_SYSROOT/usr/lib
     # build dependencies
     - export FREEBSD_MIRROR=$(/freebsd-fetch-best-mirror.sh)
-    - (cd / && /freebsd-install-package.sh xen-tools)
+    - /freebsd-setup-packagesite.sh
+    - /freebsd-install-package.sh xen-tools
 
 .cross-windows-build-template:
   extends:
