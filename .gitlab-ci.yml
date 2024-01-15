@@ -208,6 +208,23 @@ build-freebsd13-x86_64:
   variables:
     CARGO_FLAGS: "-v"
 
+build-freebsd13-netlink-x86_64:
+  variables:
+    FEATURES: ""
+  extends:
+    - .cross-freebsd13-x86_64-build-template
+    - .not-scheduled
+  variables:
+    CARGO_FLAGS: "-v"
+  before_script:
+    - !reference [.cross-freebsd13-x86_64-build-template,before_script]
+    - mkdir .cargo
+    - cp devscripts/cargo-freebsd-netlink.toml .cargo/config.toml
+    - cargo update -p libc -p rtnetlink
+  artifacts:
+    paths:
+      - target/x86_64-unknown-freebsd/debug/xen-guest-agent
+
 build-release-freebsd13-x86_64:
   stage: release-build
   extends:

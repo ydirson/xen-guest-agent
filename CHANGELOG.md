@@ -13,6 +13,8 @@ Changelog](https://keepachangelog.com/en/1.0.0/)
 
 * CI pipelines stopped producing binaries for EOL'd FreeBSD 12.4,
   switched to 13.2
+* CI now produces an (unofficial) binary for FreeBSD with Netlink
+  support
 
 ## 0.3.0 - 2023-12-15
 
