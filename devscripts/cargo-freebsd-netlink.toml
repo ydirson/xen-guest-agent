@@ -1,3 +1,3 @@
 [patch.crates-io]
-libc = { git = "https://github.com/xcp-ng/rust-libc.git", branch = "freebsd-netlink" }
+libc = { git = "https://github.com/xcp-ng/rust-libc.git", branch = "freebsd-netlink-0.2" }
 rtnetlink = { git = "https://github.com/xcp-ng/rust-rtnetlink.git", branch = "freebsd" }
