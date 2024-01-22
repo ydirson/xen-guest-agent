@@ -53,6 +53,8 @@ variables:
     - mkdir -p $CROSS_SYSROOT/usr
     - ln -s ../include $CROSS_SYSROOT/usr/include
     - ln -s ../lib $CROSS_SYSROOT/usr/lib
+    # link will not look for the proper libs otherwise
+    - export RUSTFLAGS="-L$CROSS_SYSROOT/usr/lib"
     # build dependencies
     - export FREEBSD_MIRROR=$(/freebsd-fetch-best-mirror.sh)
     - /freebsd-setup-packagesite.sh
