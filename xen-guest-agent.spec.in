@@ -13,7 +13,6 @@ Source1:        xen-guest-agent.service
 
 BuildRequires:  systemd-devel
 
-Requires: xen-libs
 Conflicts: xe-guest-utilities
 
 %global _description %{expand:

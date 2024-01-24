@@ -13,7 +13,6 @@ Architecture: any
 Depends:
  ${shlibs:Depends},
  ${misc:Depends},
- libxenstore4 | libxenstore3.0,
 Conflicts: xe-guest-utilities
 Replaces: xe-guest-utilities
 Description: Guest Agent for Xen-based virtual machines
