@@ -131,7 +131,7 @@ env-setup:
             TILDEVERSION=$UPSTREAMVERSION
             RPMVERSION=$(echo $UPSTREAMVERSION | tr "-" "+")
             ;;
-      *)    UPSTREAMVERSION=$(grep "^version =" Cargo.toml | cut -d\" -f2)
+      *)    UPSTREAMVERSION=$(awk -F'"' < Cargo.toml '/^\[/ { pkg=0 }; /^\[package\]$/ { pkg=1 }; /^version = "(.*)"/ { if (pkg) print $2 }')
             # both DEB and RPM use "~" to sort pre-releases before releases
             TILDEVERSION=$(echo $UPSTREAMVERSION | tr "-" "~")
             RPMVERSION=$TILDEVERSION
