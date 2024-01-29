@@ -234,6 +234,10 @@ build-freebsd13-netlink-x86_64:
     - mkdir .cargo
     - cp devscripts/cargo-freebsd-netlink.toml .cargo/config.toml
     - cargo update -p libc -p rtnetlink
+  after_script:
+    # since Git Strategy is "fetch", avoid poluting subsequent runs
+    # (but as of v16.9 it still won't be run on timeout or cancel)
+    - git checkout HEAD Cargo.toml
   artifacts:
     paths:
       - target/x86_64-unknown-freebsd/debug/xen-guest-agent
@@ -289,6 +293,9 @@ build-latest-linux:
   after_script:
     # show which dependencies changed in Cargo.lock
     - git diff
+    # since Git Strategy is "fetch", avoid poluting subsequent runs
+    # (but as of v16.9 it still won't be run on timeout or cancel)
+    - git checkout HEAD Cargo.toml
 
 build-latest-freebsd13-x86_64:
   parallel: !reference [.featurematrix.no-netlink,parallel]
@@ -303,6 +310,9 @@ build-latest-freebsd13-x86_64:
   after_script:
     # show which dependencies changed in Cargo.lock
     - git diff
+    # since Git Strategy is "fetch", avoid poluting subsequent runs
+    # (but as of v16.9 it still won't be run on timeout or cancel)
+    - git checkout HEAD Cargo.toml
 
 ## source packaging
 
