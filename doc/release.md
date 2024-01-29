@@ -22,7 +22,7 @@ operations:
   - update version in `Cargo.toml`
   - set release date in `CHANGELOG.md`, add link to prospective URL for Gitlab release
   - run `cargo tree` (or any cargo command updating the version in `Cargo.lock`
-  - `git commit Cargo.toml Cargo.lock -m "Release version $VERSION"`
+  - `git commit Cargo.toml Cargo.lock CHANGELOG.md -m "Release version $VERSION"`
 - `git tag $VERSION -m $VERSION`, push
 - create post-release pull request
   - update version in Cargo.toml to $NEXTVERSION-dev
