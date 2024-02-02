@@ -40,8 +40,7 @@ Some features to consider (from `xe-guest-utilities`):
 
 ### Build requirements
 
-You need a Rust toolchain.  Some of our dependencies require Rust
-1.70 or later.
+You need a Rust 1.71 toolchain or later.
 
 Since the Cargo tool cannot be told about non-Rust dependencies, you
 have to install manually on your build machine:
