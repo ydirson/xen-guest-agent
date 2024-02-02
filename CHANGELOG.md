@@ -10,6 +10,11 @@ Changelog](https://keepachangelog.com/en/1.0.0/)
 * the RPM now replaces xe-guest-utilities-latest too, not only
   xe-guest-utilities
 
+### other noteworthy changes
+
+* build on FreeBSD does not require to set environment variables any
+  more, now relies on pkg-config (requires "pkgconf" to build)
+
 ## 0.4.0 - 2024-01-29
 
 ### new features
