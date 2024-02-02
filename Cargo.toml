@@ -25,7 +25,7 @@ clap = { version = "4.4.8", features = ["derive"] }
 
 [dependencies.xenstore-rs]
 optional = true
-version = "0.6.0"
+version = "0.7.0"
 #git = "https://github.com/Wenzel/xenstore.git"
 default-features = false
 

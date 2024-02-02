@@ -44,6 +44,7 @@ You need a Rust 1.71 toolchain or later.
 
 Since the Cargo tool cannot be told about non-Rust dependencies, you
 have to install manually on your build machine:
+- pkg-config (on FreeBSD, provided by `pkgconf`)
 - packages needed to build a crate linking against a native lib
   (`llvm-dev` and `clang` on Debian-based Linux distros)
 - development files for libxenstore (package `libxen-dev` on
@@ -90,16 +91,6 @@ and for a Unix-like guest OS without netlink support:
 
 ```
 cargo build --no-default-features -F xenstore,net_pnet
-```
-
-
-If you have `libxenstore` installed in a non-standard place (this
-includes `/usr/local` on FreeBSD), set the following environment
-variables when running `cargo`:
-
-```
-BINDGEN_EXTRA_CLANG_ARGS=-I/usr/local/include
-RUSTFLAGS=-L/usr/local/lib
 ```
 
 ### How to run
