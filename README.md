@@ -38,9 +38,21 @@ Some features to consider (from `xe-guest-utilities`):
 
 ## Rust prototype
 
+### Build requirements
+
+You need a Rust toolchain.  Some of our dependencies require Rust
+1.70 or later.
+
+Since the Cargo tool cannot be told about non-Rust dependencies, you
+have to install manually on your build machine:
+- packages needed to build a crate linking against a native lib
+  (`llvm-dev` and `clang` on Debian-based Linux distros)
+- development files for libxenstore (package `libxen-dev` on
+  Debian-based Linux distros, `xen-tools` on FreeBSD)
+
 ### How to build
 
-Make sure you have a Rust toolchain available.  The base command is simply:
+The base command is simply:
 
 ```
 cargo build
