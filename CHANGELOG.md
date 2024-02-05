@@ -5,6 +5,10 @@ Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ## 0.5.0 - unreleased
 
+### new features
+
+* the RPM now enables and starts the service on first install
+
 ### bugfixes
 
 * the RPM now replaces xe-guest-utilities-latest too, not only
