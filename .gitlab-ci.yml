@@ -1,6 +1,7 @@
 stages:
   - setup
   - check
+  - build-check
   - release-build
   - package
   - deploy
@@ -19,9 +20,12 @@ variables:
   PKG_ROOT: "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic"
 
 .build-template:
-  stage: check
+  stage: build-check
   script:
     - cargo build ${FEATURES} ${CARGO_FLAGS}
+    # make sure build introduces no diffs
+    # FIXME cannot be set there yet since we need a patch for FreeBSD
+    #- git diff --exit-code
 
 .debian-build-template:
   extends:
@@ -92,6 +96,15 @@ clippy:
     - rustup component add clippy
   script:
     - cargo clippy
+
+cargo-lock:
+  stage: check
+  extends:
+    - .debian-build-template
+  script:
+    - cargo tree
+    # if Cargo.lock was not commited, this will show here
+    - git diff --exit-code
 
 ## common defs
 
@@ -321,6 +334,8 @@ pkg-source:
   image: ${LINUX_RUSTIMG}
   extends:
     - .not-scheduled
+  needs:
+    - env-setup
   script:
     - cargo package --no-verify
     - CRATEFILE=$(basename target/package/xen-guest-agent-*.crate)
