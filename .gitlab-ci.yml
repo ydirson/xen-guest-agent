@@ -333,6 +333,8 @@ pkg-source:
   image: ${LINUX_RUSTIMG}
   extends:
     - .not-scheduled
+  needs:
+    - env-setup
   script:
     - cargo package --no-verify
     - CRATEFILE=$(basename target/package/xen-guest-agent-*.crate)
