@@ -4,7 +4,3 @@ git = "https://github.com/xcp-ng/rust-libc.git"
 # cannot specify a cargo feature here, so use a version exposing
 # freebsd-netlink support without needing a feature
 rev = "bfe4c69a83a9e6fc4fe92867c7ebbc471b723ccb"
-
-[patch.crates-io.rtnetlink]
-git = "https://github.com/xcp-ng/rust-rtnetlink.git"
-branch = "freebsd"
