@@ -1,6 +1,7 @@
 stages:
   - setup
   - check
+  - build-check
   - release-build
   - package
   - deploy
@@ -19,7 +20,7 @@ variables:
   PKG_ROOT: "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic"
 
 .build-template:
-  stage: check
+  stage: build-check
   script:
     - cargo build ${FEATURES} ${CARGO_FLAGS}
     # make sure build introduces no diffs
