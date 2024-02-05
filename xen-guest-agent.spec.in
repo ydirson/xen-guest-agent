@@ -14,7 +14,9 @@ Source1:        xen-guest-agent.service
 BuildRequires:  systemd-devel
 
 Conflicts: xe-guest-utilities
+Obsoletes: xe-guest-utilities
 Conflicts: xe-guest-utilities-latest
+Obsoletes: xe-guest-utilities-latest
 
 %global _description %{expand:
 %{summary}.}
