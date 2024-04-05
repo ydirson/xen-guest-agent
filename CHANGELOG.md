@@ -7,6 +7,8 @@ Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ### bugfixes
 
+* AlmaLinux and Rocky Linux guests are now reported as such, when
+  build against os_info 3.8 or better
 * the RPM now replaces xe-guest-utilities-latest too, not only
   xe-guest-utilities
 
