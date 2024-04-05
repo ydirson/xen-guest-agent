@@ -20,3 +20,6 @@ build:
 override_dh_auto_install:
 	install -m755 -D $(AGENT_BINARY) \
 	  debian/xen-guest-agent/usr/sbin/xen-guest-agent
+
+override_dh_dwz:
+	: avoid error handling release binaries with no debug info
