@@ -5,6 +5,12 @@ Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ## 0.5.0 - unreleased
 
+### new features
+
+* the RPM now enables and starts the service on first install
+* the RPM now causes xe-guest-utilities to be uninstalled
+  automatically
+
 ### bugfixes
 
 * AlmaLinux and Rocky Linux guests are now reported as such, when

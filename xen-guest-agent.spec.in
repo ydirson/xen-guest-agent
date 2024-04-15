@@ -14,7 +14,9 @@ Source1:        xen-guest-agent.service
 BuildRequires:  systemd-devel
 
 Conflicts: xe-guest-utilities
+Obsoletes: xe-guest-utilities
 Conflicts: xe-guest-utilities-latest
+Obsoletes: xe-guest-utilities-latest
 
 %global _description %{expand:
 %{summary}.}
@@ -36,6 +38,10 @@ Conflicts: xe-guest-utilities-latest
 
 %post
 %systemd_post xen-guest-agent.service
+# enable on first install
+if [ $1 -eq 1 ]; then
+  /usr/bin/systemctl enable --now xen-guest-agent.service
+fi
 
 %postun
 %systemd_postun xen-guest-agent.service
