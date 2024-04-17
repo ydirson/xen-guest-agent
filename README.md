@@ -40,7 +40,15 @@ Some features to consider (from `xe-guest-utilities`):
 
 ### Build requirements
 
-You need a Rust 1.71 toolchain or later.
+You need a Rust 1.74 toolchain or later.
+
+> **Note**:
+>
+> Actually, you only need a Rust 1.71 toolchain or later to build this
+> package's code (as reflected in `Cargo.toml`).  **However**, due to
+> the current-as-of-the-time-of-this-writing version of `clap` needing
+> a 1.74 toolchain, you will need 1.74 to build using the shipped
+> `Cargo.lock`.
 
 Since the Cargo tool cannot be told about non-Rust dependencies, you
 have to install manually on your build machine:
