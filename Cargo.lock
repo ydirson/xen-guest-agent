@@ -774,6 +774,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "pnet_base"
+version = "0.35.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ffc190d4067df16af3aba49b3b74c469e611cad6314676eaf1157f31aa0fb2f7"
+dependencies = [
+ "no-std-net",
+]
+
+[[package]]
 name = "pnet_datalink"
 version = "0.34.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -781,7 +790,7 @@ checksum = "ad5854abf0067ebbd3967f7d45ebc8976ff577ff0c7bd101c4973ae3c70f98fe"
 dependencies = [
  "ipnetwork",
  "libc",
- "pnet_base",
+ "pnet_base 0.34.0",
  "pnet_sys",
  "winapi",
 ]
@@ -1353,7 +1362,7 @@ dependencies = [
  "netlink-packet-route",
  "netlink-proto",
  "os_info",
- "pnet_base",
+ "pnet_base 0.35.0",
  "pnet_datalink",
  "rtnetlink",
  "sysctl",
