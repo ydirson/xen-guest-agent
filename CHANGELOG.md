@@ -20,6 +20,7 @@ Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ### other noteworthy changes
 
+* build now requires Rust 1.77
 * build on FreeBSD does not require to set environment variables any
   more, now relies on pkg-config (requires "pkgconf" to build)
 
