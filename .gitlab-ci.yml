@@ -16,7 +16,9 @@ workflow:
     - if: $CI_COMMIT_TAG
 
 variables:
-  LINUX_RUSTIMG: "docker.io/library/rust:buster"
+  RUST_MIN_VERSION: "1.74-buster"
+  RUST_REL_VERSION: "1.79-buster"
+  LINUX_RUSTIMG: "docker.io/library/rust:${RUST_VERSION}"
   PKG_ROOT: "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic"
 
 .build-template:
@@ -35,6 +37,7 @@ variables:
     - apt-get update
     - apt-get install -y llvm-dev clang libxen-dev
 
+# FIXME does not allow to pin a toolchain version
 .cross-build-template:
   extends:
     - .build-template
@@ -91,6 +94,8 @@ clippy:
   stage: check
   extends:
     - .debian-build-template
+  variables:
+    RUST_VERSION: "latest"
   before_script:
     - !reference [.debian-build-template,before_script]
     - rustup component add clippy
@@ -101,6 +106,8 @@ cargo-lock:
   stage: check
   extends:
     - .debian-build-template
+  variables:
+    RUST_VERSION: "${RUST_REL_VERSION}"
   script:
     - cargo tree
     # if Cargo.lock was not commited, this will show here
@@ -186,6 +193,7 @@ build-linux-everycommit:
     - .debian-build-template
   variables:
     CARGO_FLAGS: "-v"
+    RUST_VERSION: "${RUST_MIN_VERSION}"
   before_script:
     - printf "\e[0Ksection_start:$(date +%s):before_script[collapsed=true]\r\e[0K\e[1;33mBuild setup\e[1;0m\n"
     - !reference [.debian-build-template,before_script]
@@ -208,6 +216,7 @@ build-linux:
     - .debian-build-template
   variables:
     CARGO_FLAGS: "-v"
+    RUST_VERSION: "${RUST_MIN_VERSION}"
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
       # building branch tip already included in 'everycommit'
@@ -222,6 +231,7 @@ build-release-linux-x86_64:
   variables:
     FEATURES: "-F static"
     CARGO_FLAGS: "--release"
+    RUST_VERSION: "${RUST_REL_VERSION}"
   artifacts:
     paths:
       - target/release/xen-guest-agent
@@ -300,6 +310,7 @@ build-latest-linux:
     - .scheduled
   variables:
     CARGO_FLAGS: "-v"
+    RUST_VERSION: "${RUST_MIN_VERSION}"
   before_script:
     - !reference [".debian-build-template", "before_script"]
     - mv Cargo.lock Cargo.lock.current
@@ -332,6 +343,8 @@ build-latest-freebsd13-x86_64:
 pkg-source:
   stage: package
   image: ${LINUX_RUSTIMG}
+  variables:
+    RUST_VERSION: "latest"
   extends:
     - .not-scheduled
   needs:
