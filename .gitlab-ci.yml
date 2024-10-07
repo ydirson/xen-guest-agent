@@ -80,7 +80,7 @@ variables:
     CARGO_BUILD_TARGET: "aarch64-unknown-linux-gnu"
     BINDGEN_EXTRA_CLANG_ARGS_aarch64_unknown_linux_gnu: "--sysroot=/usr/aarch64-linux-gnu -idirafter/usr/include"
 
-.scheduled:
+.only-scheduled:
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
 
@@ -301,13 +301,12 @@ build-linux-aarch64:
     - apt-get update
     - apt-get install -y libxen-dev:arm64
 
-## continuous checking against most recent dependencies
+## continuous checking against most recent dependencies (also on push/PR)
 
 build-latest-linux:
   parallel: !reference [.featurematrix,parallel]
   extends:
     - .debian-build-template
-    - .scheduled
   variables:
     CARGO_FLAGS: "-v"
     RUST_VERSION: "${RUST_MIN_VERSION}"
@@ -325,7 +324,6 @@ build-latest-freebsd13-x86_64:
   parallel: !reference [.featurematrix.no-netlink,parallel]
   extends:
     - .cross-freebsd13-x86_64-build-template
-    - .scheduled
   variables:
     CARGO_FLAGS: "-v"
   before_script:
