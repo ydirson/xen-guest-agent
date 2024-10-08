@@ -16,5 +16,5 @@ Depends:
 Conflicts: xe-guest-utilities
 Replaces: xe-guest-utilities
 Description: Guest Agent for Xen-based virtual machines
- This agent collects informations about the VM it runs inside of,
- and makes them avilable to the management toolstack.
+ This agent collects informations about the VM it runs in,
+ and makes them available to the management toolstack.
