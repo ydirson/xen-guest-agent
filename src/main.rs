@@ -19,11 +19,17 @@ mod collector_memory;
 #[cfg_attr(target_os = "freebsd", path = "vif_detect_freebsd.rs")]
 mod vif_detect;
 
+#[cfg_attr(target_os = "linux", path = "hypervisor_linux.rs")]
+mod hypervisor;
+
+mod error;
+
 use clap::Parser;
 
 use crate::collector_memory::MemorySource;
 use crate::collector_net::NetworkSource;
 use crate::datastructs::KernelInfo;
+use crate::hypervisor::check_is_in_xen_guest;
 use crate::publisher::Publisher;
 
 use futures::{pin_mut, select, FutureExt, TryStreamExt};
@@ -36,11 +42,17 @@ const REPORT_INTERNAL_NICS: bool = false; // FIXME make this a CLI flag
 const MEM_PERIOD_SECONDS: u64 = 60;
 const DEFAULT_LOGLEVEL: &str = "info";
 
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     let cli = Cli::parse();
 
     setup_logger(cli.stderr, &cli.loglevel)?;
+
+    if let Err(err) = check_is_in_xen_guest() {
+        log::error!("not starting xen-guest-agent, {err}");
+        return Err(err.into())
+    }
 
     let mut publisher = Publisher::new()?;
 

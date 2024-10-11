@@ -7,6 +7,8 @@ Changelog](https://keepachangelog.com/en/1.0.0/)
 
 ### new features
 
+* in Linux guests, exits early with better diagnostic when not
+  running under Xen
 * the RPM now enables and starts the service on first install
 * the RPM now causes xe-guest-utilities to be uninstalled
   automatically
